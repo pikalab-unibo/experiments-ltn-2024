@@ -41,7 +41,7 @@ jobs:
 
       - name: Test
         shell: bash
-        run: poetry run python -m unittest discover -v -s tests
+        run: poetry run pytest -v
 
   release:
     needs: test
