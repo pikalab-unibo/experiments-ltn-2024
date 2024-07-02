@@ -81,6 +81,10 @@ class TestLearning(unittest.TestCase):
                 x_A = data[labels.squeeze() == 1]
                 x_not_A = data[labels.squeeze() == 0]
                 
+
+                if len(x_A) == 0 or len(x_not_A) == 0:
+                    continue
+
                 # Compute satisfaction level
                 sat_agg_value = self.sat_agg(
                     self.forall(self.predicate(x_A)),
@@ -97,7 +101,7 @@ class TestLearning(unittest.TestCase):
                 train_loss += loss.item()
             
             train_loss /= len(self.train_loader)
-            
+
             # Check if the loss is decreasing
         self.assertLess(train_loss, previous_loss, "Loss did not decrease after training")
 
