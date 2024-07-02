@@ -1,0 +1,34 @@
+
+[tool.poetry]
+name = "ekuru_ltn"
+
+packages = [
+    { include = "ltn" },
+]
+
+version = "0.0.0"
+description = "A parser for FOL that utilizes NLTK Logic Module to parse and fuzzify FOL rules."
+authors = ["Emre Kuru <emre.kuru@ozu.edu.tr>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">= 3.12.0, < 4.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+poetry = "^1.7.0"
+pytest = "^8.1.0"
+coverage = "^7.4.0"
+mypy = "^1.9.0"
+gitpython = "^3.1.43"
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+ignore_missing_imports = true
