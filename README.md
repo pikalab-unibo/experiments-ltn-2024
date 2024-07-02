@@ -4,6 +4,7 @@
 ## Project structure
 Overview:
 
+```bash
 <root directory>
 ├── ltn_imp/             # main package (should be named after your project)
 │   ├── __init__.py         # python package marker
@@ -21,3 +22,4 @@ Overview:
 ├── pyproject.toml          # declares build dependencies
 ├── poetry.toml             # Poetry settings
 └── Dockerfile              # configuration of the Docker image to be realsed on Dockerhub
+```
