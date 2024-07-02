@@ -73,7 +73,7 @@ class TestLearning(unittest.TestCase):
         
         for epoch in range(10):
             train_loss = 0.0
-            for batch_idx, (data, labels) in enumerate(self.train_loader):
+            for _, (data, labels) in enumerate(self.train_loader):
 
                 self.optimizer.zero_grad()
 
