@@ -1,9 +1,8 @@
 from nltk.sem import logic
-from ltn_imp.fuzzy_operators.connectives import *
-from ltn_imp.fuzzy_operators.aggregators import *
-from ltn_imp.fuzzy_operators.predicates import * 
-from ltn_imp.fuzzy_operators.quantifiers import *
-from ltn_imp.fuzzy_operators.functions import *
+from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotOperation, ImpliesConnective, IffConnective
+from ltn_imp.fuzzy_operators.predicates import Predicate 
+from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
+from ltn_imp.fuzzy_operators.functions import Function
 
 And = AndConnective()
 Or = OrConnective()

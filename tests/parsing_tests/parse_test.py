@@ -46,7 +46,7 @@ w = torch.tensor([[1.0]])
 
 test_data = torch.tensor([[1.0, 1.0, 1.0, 1.0]])
 
-class TestLogic(unittest.TestCase):
+class TestParsing(unittest.TestCase):
 
     def assertAlmostEqualTensor(self, tensor1, tensor2, delta=0.05):
        self.assertTrue(torch.allclose(tensor1, tensor2, atol=delta), f"{tensor1} not close to {tensor2} within {delta}")
