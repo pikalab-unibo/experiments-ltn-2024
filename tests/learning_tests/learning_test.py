@@ -9,6 +9,8 @@ from ltn_imp.fuzzy_operators.aggregators import AvgSatAgg
 from ltn_imp.fuzzy_operators.predicates import Predicate
 from ltn_imp.fuzzy_operators.connectives import NotOperation
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier
+from ltn_imp.parsing.parser import convert_to_ltn
+from nltk.sem.logic import Expression
 
 class BinaryClassificationModel(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -55,11 +57,19 @@ class TestLearning(unittest.TestCase):
         input_size = 10
         hidden_size = 5
 
-        self.predicate = Predicate( BinaryClassificationModel(input_size, hidden_size) ) 
-        self.optimizer = optim.Adam(self.predicate.model.parameters(), lr=0.001)
+        self.model = BinaryClassificationModel(input_size,hidden_size)
+        predicates = {"Classifier":self.model }
+
+
+        expression_1 = Expression.fromstring("all x. (Classifier(x))")
+        self.rule_1 = convert_to_ltn(expression_1, predicates=predicates, functions=None)
+
+        expression_2 = Expression.fromstring("all x. (not Classifier(x))")
+        self.rule_2 = convert_to_ltn(expression_2, predicates=predicates, functions=None)
+
+        
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.sat_agg = AvgSatAgg()
-        self.Not = NotOperation()
-        self.forall = ForallQuantifier()
 
         # Use the pre-defined dataset and dataloader
         self.train_loader = train_loader
@@ -68,7 +78,7 @@ class TestLearning(unittest.TestCase):
 
         # Initialize previous_loss by running one forward pass
         data, labels = next(iter(self.train_loader))
-        outputs = self.predicate.model(data)
+        outputs = self.model(data)
         previous_loss = torch.nn.functional.binary_cross_entropy(outputs, labels).item()
         
         for epoch in range(10):
@@ -77,18 +87,17 @@ class TestLearning(unittest.TestCase):
 
                 self.optimizer.zero_grad()
 
-                # Ground the variables with current batch data
-                x_A = data[labels.squeeze() == 1]
-                x_not_A = data[labels.squeeze() == 0]
+                pos = data[labels.squeeze() == 1]
+                neg = data[labels.squeeze() == 0]
                 
 
-                if len(x_A) == 0 or len(x_not_A) == 0:
+                if len(pos) == 0 or len(neg) == 0:
                     continue
 
                 # Compute satisfaction level
                 sat_agg_value = self.sat_agg(
-                    self.forall(self.predicate(x_A)),
-                    self.forall(self.Not(self.predicate(x_not_A)))
+                    self.rule_1( {"x" : pos} ),
+                    self.rule_2( { "x": neg})
                 )
                 
                 # Compute loss
