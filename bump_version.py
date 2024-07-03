@@ -47,22 +47,28 @@ def comput_version_increment_from(commits: Iterable[Commit]) -> Tuple[VersionInc
     major_changes, minor_changes, patch_changes, dev_changes = 0, 0, 0, 0
     for index, commit in enumerate(commits):
         log(f"{index + 1}. {commit.hexsha}: `{commit.summary.strip()}`")
+
         if 'BREAKING CHANGE:' in commit.message:
             major_changes += 1
             log(f"   + **major** change: `BREAKING CHANGE:` found in summary")
+
         if ':' not in commit.summary:
             log(f"   + considered as **dev** change: commit message is not conventional")
-            major_changes += 1
+            patch_changes += 1
+
         description = commit.summary.split(':')[0]
         if description.endswith('!'):
             major_changes += 1
             log(f"   + **major** change: `!` found in description")
+
         if description.startswith('feat'):
             minor_changes += 1
             log(f"   + **minor** change: `feat` found in description")
+
         if description.startswith('fix'):
             patch_changes += 1
             log(f"   + **patch** change: `fix` found in description")
+
         dev_changes += 1
         log(f"   + **dev** change: commit is described as `{description}`")
     increment = version_increment(major_changes, minor_changes, patch_changes, dev_changes)
