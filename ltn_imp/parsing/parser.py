@@ -7,7 +7,11 @@ from nltk.sem.logic import Expression
 
 class ExpressionVisitor:
 
-    def __init__(self, predicates, functions, connective_impls={}, quantifier_impls={}):
+    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None):
+
+        connective_impls = connective_impls or {}
+        quantifier_impls = quantifier_impls or {}
+
         self.predicates = predicates
         self.functions = functions
 
@@ -93,5 +97,5 @@ def convert_to_ltn(expression, predicates, functions, connective_impls=None, qua
             add_accept_method(subsubclass)
 
     expression = Expression.fromstring(expression)
-    visitor = ExpressionVisitor(predicates, functions)
+    visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls )
     return expression.accept(visitor)

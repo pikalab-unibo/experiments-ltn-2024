@@ -9,7 +9,7 @@ class Man(torch.nn.Module):
         super().__init__(*args, **kwargs)
 
     def forward(self, x):
-        return x if x is not None else torch.Tensor([0])
+        return x 
     
 class Women(torch.nn.Module):
     
@@ -17,7 +17,7 @@ class Women(torch.nn.Module):
         super().__init__(*args, **kwargs)
 
     def forward(self, x, y):
-        return x if x is not None and y is not None else torch.Tensor([0])
+        return x 
     
 class Person(torch.nn.Module):
     
@@ -25,7 +25,7 @@ class Person(torch.nn.Module):
         super().__init__(*args, **kwargs)
 
     def forward(self, z):
-        return x if z is not None else torch.Tensor([0])
+        return z
 
 class man(torch.nn.Module):
     
@@ -33,7 +33,7 @@ class man(torch.nn.Module):
         super().__init__(*args, **kwargs)
 
     def forward(self, x):
-        return torch.Tensor([2]) if x is not None else torch.Tensor([0])
+        return torch.Tensor([2]) 
 
 predicates = {"Man": Man(), "Women": Women(), "Person" : Person()}
 functions = {"man": man()}
@@ -50,12 +50,12 @@ class TestParsing(unittest.TestCase):
     def assertAlmostEqualTensor(self, tensor1, tensor2, delta=0.05):
        self.assertTrue(torch.allclose(tensor1, tensor2, atol=delta), f"{tensor1} not close to {tensor2} within {delta}")
 
-    def _test_expression(self, expr: str, expected: dict = None, value = torch.tensor([1.0])):
+    def _test_expression(self, expr: str, expected: dict = None, value = torch.tensor([1.0]), connective_impls=None, quantifier_impls=None):
 
         if expected is None: 
             expected = {k: v for k,v in globals().items() if len(k) == 1}
 
-        ltn_expr = convert_to_ltn(expr, predicates, functions)
+        ltn_expr = convert_to_ltn(expr, predicates, functions, connective_impls=connective_impls, quantifier_impls=quantifier_impls)
         result = ltn_expr(expected)
         self.assertAlmostEqualTensor(result, value)
             
@@ -66,19 +66,34 @@ class TestParsing(unittest.TestCase):
         self._test_expression('man(x)', value=torch.tensor([2.0]))
 
     def test_forall(self):
-        self._test_expression('forall x. Man(x)')
+        methods = ["min", "mean", "prod"]
+        for method in methods:
+            with self.subTest(method=method):
+                self._test_expression('forall x. Man(x)', quantifier_impls={'forall': method})
 
     def test_and(self):
-        self._test_expression('Man(x) and Women(x, y)')
+        implementations = [ "prod", "min", "luk"]
+        for impl in implementations:
+            with self.subTest(impl=impl):
+                self._test_expression('Man(x) and Women(x, y)', connective_impls={'and': impl})
     
     def test_or(self):
-        self._test_expression('Man(x) or Women(x, y)')
+        implementations = ["max", "prob_sum", "luk"]
+        for impl in implementations:
+            with self.subTest(impl=impl):
+                self._test_expression('Man(x) or Women(x, y)', connective_impls={'or': impl})
 
     def test_not(self):
-        self._test_expression('not Man(x)', value=torch.tensor([0.0]))
+        implementations = ["standard", "godel"]
+        for impl in implementations:
+            with self.subTest(impl=impl):
+                self._test_expression('not Man(x)', value=torch.tensor([0.0]), connective_impls={'not': impl})
 
     def test_implies(self):
-        self._test_expression('Man(x) -> Women(x, y)')
+        implementations = ["kleene_dienes", "godel", "reichenbach", "goguen", "luk"]
+        for impl in implementations:
+            with self.subTest(impl=impl):
+                self._test_expression('Man(x) -> Women(x, y)', connective_impls={'implies': impl})
 
     def test_equiv(self):
         self._test_expression('Man(x) <-> Women(x, y)')
@@ -90,7 +105,10 @@ class TestParsing(unittest.TestCase):
         self._test_expression('not (Man(x) and Women(x, y)) or Person(x)')
 
     def test_exists(self):
-        self._test_expression('exists y. Women(x, y)')
+        methods = ["max", "mean", "prod"]
+        for method in methods:
+            with self.subTest(method=method):
+                self._test_expression('exists y. Women(x, y)', quantifier_impls={'exists': method})
 
     def test_nested_quantifiers(self):
         self._test_expression('forall x. exists y. Women(x, y)')
