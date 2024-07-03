@@ -5,25 +5,27 @@ from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifi
 from ltn_imp.fuzzy_operators.functions import Function
 from nltk.sem.logic import Expression
 
-And = AndConnective()
-Or = OrConnective()
-Not = NotConnective()
-Implies = ImpliesConnective()
-Equiv = IffConnective()
-
-Exists = ExistsQuantifier()
-Forall = ForallQuantifier()
-
 class ExpressionVisitor:
 
-    def __init__(self, predicates, functions):
+    def __init__(self, predicates, functions, connective_impls={}, quantifier_impls={}):
         self.predicates = predicates
         self.functions = functions
+
+        And = AndConnective(implementation_name=connective_impls.get('and', 'min'))
+        Or = OrConnective(implementation_name=connective_impls.get('or', 'max'))
+        Not = NotConnective(implementation_name=connective_impls.get('not', 'standard'))
+        Implies = ImpliesConnective(implementation_name=connective_impls.get('implies', 'kleene_dienes'))
+        Equiv = IffConnective(implementation_name=connective_impls.get('iff', 'default'))
+
+        Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'max'))
+        Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'min'))
+
         self.connective_map = {
             logic.AndExpression: And,
             logic.OrExpression: Or,
             logic.ImpExpression: Implies,
-            logic.IffExpression: Equiv
+            logic.IffExpression: Equiv,
+            logic.NegatedExpression : Not
         }
         self.quantifier_map = {
             logic.ExistsExpression: Exists,
@@ -67,8 +69,9 @@ class ExpressionVisitor:
             raise NotImplementedError(f"Unsupported binary expression type: {type(expression)}")
 
     def visit_NegatedExpression(self, expression):
+        connective = self.connective_map.get(type(expression))
         term = self.visit(expression.term)
-        return lambda var_mapping: Not(term(var_mapping))
+        return lambda var_mapping: connective(term(var_mapping))
 
     def visit_QuantifiedExpression(self, expression):
         quantifier = self.quantifier_map.get(type(expression))
@@ -82,7 +85,7 @@ class ExpressionVisitor:
 def add_accept_method(cls):
     cls.accept = lambda self, visitor: visitor.visit(self)
 
-def convert_to_ltn(expression, predicates, functions):
+def convert_to_ltn(expression, predicates, functions, connective_impls=None, quantifier_impls=None):
 
     for subclass in logic.Expression.__subclasses__():
         add_accept_method(subclass)
