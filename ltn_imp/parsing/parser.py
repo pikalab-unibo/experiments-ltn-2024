@@ -1,5 +1,5 @@
 from nltk.sem import logic
-from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotOperation, ImpliesConnective, IffConnective
+from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective
 from ltn_imp.fuzzy_operators.predicates import Predicate 
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
 from ltn_imp.fuzzy_operators.functions import Function
@@ -7,7 +7,7 @@ from nltk.sem.logic import Expression
 
 And = AndConnective()
 Or = OrConnective()
-Not = NotOperation()
+Not = NotConnective()
 Implies = ImpliesConnective()
 Equiv = IffConnective()
 
