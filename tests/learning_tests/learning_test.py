@@ -7,7 +7,6 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.datasets import make_classification
 from ltn_imp.fuzzy_operators.aggregators import AvgSatAgg
 from ltn_imp.parsing.parser import convert_to_ltn
-from nltk.sem.logic import Expression
 
 class BinaryClassificationModel(nn.Module):
     def __init__(self, input_size, hidden_size):
