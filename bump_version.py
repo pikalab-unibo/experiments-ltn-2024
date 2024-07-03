@@ -54,7 +54,7 @@ def comput_version_increment_from(commits: Iterable[Commit]) -> Tuple[VersionInc
 
         if ':' not in commit.summary:
             log(f"   + considered as **dev** change: commit message is not conventional")
-            patch_changes += 1
+            dev_changes += 1
 
         description = commit.summary.split(':')[0]
         if description.endswith('!'):
