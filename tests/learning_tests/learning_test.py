@@ -6,9 +6,6 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from sklearn.datasets import make_classification
 from ltn_imp.fuzzy_operators.aggregators import AvgSatAgg
-from ltn_imp.fuzzy_operators.predicates import Predicate
-from ltn_imp.fuzzy_operators.connectives import NotOperation
-from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier
 from ltn_imp.parsing.parser import convert_to_ltn
 from nltk.sem.logic import Expression
 
@@ -61,10 +58,10 @@ class TestLearning(unittest.TestCase):
         predicates = {"Classifier":self.model }
 
 
-        expression_1 = Expression.fromstring("all x. (Classifier(x))")
+        expression_1 = "all x. (Classifier(x))"
         self.rule_1 = convert_to_ltn(expression_1, predicates=predicates, functions=None)
 
-        expression_2 = Expression.fromstring("all x. (not Classifier(x))")
+        expression_2 = "all x. (not Classifier(x))"
         self.rule_2 = convert_to_ltn(expression_2, predicates=predicates, functions=None)
 
         
@@ -97,7 +94,7 @@ class TestLearning(unittest.TestCase):
                 # Compute satisfaction level
                 sat_agg_value = self.sat_agg(
                     self.rule_1( {"x" : pos} ),
-                    self.rule_2( { "x": neg})
+                    self.rule_2( { "x" : neg})
                 )
                 
                 # Compute loss

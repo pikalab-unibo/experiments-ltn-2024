@@ -1,6 +1,5 @@
 import unittest
 import torch
-from nltk.sem.logic import Expression
 from ltn_imp.parsing.parser import convert_to_ltn
 from ltn_imp.fuzzy_operators.aggregators import *
 
@@ -56,7 +55,6 @@ class TestParsing(unittest.TestCase):
         if expected is None: 
             expected = {k: v for k,v in globals().items() if len(k) == 1}
 
-        expr = Expression.fromstring(expr)
         ltn_expr = convert_to_ltn(expr, predicates, functions)
         result = ltn_expr(expected)
         self.assertAlmostEqualTensor(result, value)

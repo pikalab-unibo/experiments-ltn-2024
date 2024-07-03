@@ -3,6 +3,7 @@ from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, Not
 from ltn_imp.fuzzy_operators.predicates import Predicate 
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
 from ltn_imp.fuzzy_operators.functions import Function
+from nltk.sem.logic import Expression
 
 And = AndConnective()
 Or = OrConnective()
@@ -82,10 +83,12 @@ def add_accept_method(cls):
     cls.accept = lambda self, visitor: visitor.visit(self)
 
 def convert_to_ltn(expression, predicates, functions):
+
     for subclass in logic.Expression.__subclasses__():
         add_accept_method(subclass)
         for subsubclass in subclass.__subclasses__():
             add_accept_method(subsubclass)
 
+    expression = Expression.fromstring(expression)
     visitor = ExpressionVisitor(predicates, functions)
     return expression.accept(visitor)
