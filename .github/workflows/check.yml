@@ -45,7 +45,7 @@ jobs:
 
   release:
     needs: test
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     name: Release on PyPI and GitHub
     permissions:
