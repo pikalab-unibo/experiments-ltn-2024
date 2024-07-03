@@ -107,14 +107,20 @@ class TestParsing(unittest.TestCase):
     def test_batch_inputs(self):
         self._test_expression('Man(x) and Person(x)', expected={'x':test_data})
     
-    def test_avg_sat_agg(self):
-        agg = AvgSatAgg()
+    def test_pmean_sat_agg(self):
+        agg = SatAgg(implementation_name="pmean", p=2)
         result = agg(torch.tensor([0.5]), torch.tensor([0.7]), torch.tensor([0.9]))
         expected = torch.tensor([0.7])
         self.assertAlmostEqualTensor(result, expected)
 
+    def test_pmean_error_sat_agg(self):
+        agg = SatAgg(implementation_name="pmean_error", p=2)
+        result = agg(torch.tensor([0.5]), torch.tensor([0.7]), torch.tensor([0.9]))
+        expected = torch.tensor([0.6614])
+        self.assertAlmostEqualTensor(result, expected)
+
     def test_prod_sat_agg(self):
-        agg = ProdSatAgg()
+        agg = SatAgg(implementation_name="prod")
         result = agg(torch.tensor([0.5]), torch.tensor([0.7]), torch.tensor([0.9]))
         expected = torch.tensor([0.315])
         self.assertAlmostEqualTensor(result, expected)

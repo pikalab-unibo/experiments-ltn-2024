@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from sklearn.datasets import make_classification
-from ltn_imp.fuzzy_operators.aggregators import AvgSatAgg
+from ltn_imp.fuzzy_operators.aggregators import SatAgg
 from ltn_imp.parsing.parser import convert_to_ltn
 
 class BinaryClassificationModel(nn.Module):
@@ -65,7 +65,7 @@ class TestLearning(unittest.TestCase):
 
         
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        self.sat_agg = AvgSatAgg()
+        self.sat_agg = SatAgg()
 
         # Use the pre-defined dataset and dataloader
         self.train_loader = train_loader
