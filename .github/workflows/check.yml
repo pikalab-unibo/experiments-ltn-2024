@@ -78,6 +78,10 @@ jobs:
       - name: Build Python Package
         run: poetry build
 
+      - name: Pull latest changes
+        shell: bash
+        run: git pull origin main
+
       - name: Push changes
         run: git push
 
