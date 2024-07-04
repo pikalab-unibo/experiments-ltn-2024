@@ -24,6 +24,9 @@ pytest = "^8.1.0"
 coverage = "^7.4.0"
 mypy = "^1.9.0"
 gitpython = "^3.1.43"
+ipykernel = "^6.29.5"
+matplotlib = "^3.9.0"
+ltntorch = "^1.0.1"
 
 [[tool.poetry.source]]
 name = "PyPI"
