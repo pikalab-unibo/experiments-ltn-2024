@@ -1,0 +1,63 @@
+@startuml
+title Fuzzy Logic Connectives
+
+abstract class Connective {
+    +forward(*args)
+    +__call__(*args)
+}
+
+class BinaryConnective {
+    -implementation
+    +__init__(implementation)
+    +forward(a, b)
+}
+
+class UnaryConnective {
+    -implementation
+    +__init__(implementation)
+    +forward(a)
+}
+
+class AndConnective {
+    +__init__(implementation_name="min", stable=True)
+    -and_min(a, b)
+    -and_prod(a, b, stable=True)
+    -and_luk(a, b)
+}
+
+class OrConnective {
+    +__init__(implementation_name="max", stable=True)
+    -or_max(a, b)
+    -or_prob_sum(a, b, stable=True)
+    -or_luk(a, b)
+}
+
+class ImpliesConnective {
+    +__init__(implementation_name="kleene_dienes", stable=True)
+    -implies_kleene_dienes(a, b)
+    -implies_godel(a, b)
+    -implies_reichenbach(a, b, stable=True)
+    -implies_goguen(a, b, stable=True)
+    -implies_luk(a, b)
+}
+
+class IffConnective {
+    +__init__(implementation_name="default")
+    -iff_default(a, b)
+}
+
+class NotConnective {
+    +__init__(implementation_name="standard")
+    -not_standard(a)
+    -not_godel(a)
+}
+
+Connective <|-- BinaryConnective
+Connective <|-- UnaryConnective
+BinaryConnective <|-- AndConnective
+BinaryConnective <|-- OrConnective
+BinaryConnective <|-- ImpliesConnective
+BinaryConnective <|-- IffConnective
+UnaryConnective <|-- NotConnective
+
+@enduml

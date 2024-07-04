@@ -11,11 +11,11 @@ class Connective(ABC):
         return self.forward(*args)
 
 # Base class for binary connectives
-class BinaryConnective:
+class BinaryConnective(Connective):
     def __init__(self, implementation):
         self.implementation = implementation
 
-    def __call__(self, a, b):
+    def forward(self, a, b):
         return self.implementation(a, b)
 
 # Base class for unary operations
