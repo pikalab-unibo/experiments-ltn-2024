@@ -1,41 +1,38 @@
 from abc import ABC, abstractmethod
-import torch
+from ltn_imp.fuzzy_operators.aggregators import *
 
-# Base class for all quantifiers
+# Define the available aggregation operators
+agg_op_map = {
+    "min": AggregMin,
+    "pmean": AggregPMean,
+    "pmean_error": AggregPMeanError
+}
+
+# Abstract class for quantifiers
 class Quantifier(ABC):
+    def __init__(self, method):
+        if method not in agg_op_map:
+            raise ValueError(f"Unknown aggregation operator: {method}")
+        self.agg_op = agg_op_map[method]()  # Initialize the aggregation operator
+
     @abstractmethod
-    def forward(self, *args):
+    def __call__(self, truth_values, dim=None):
         pass
-
-    def __call__(self, *args):
-        return self.forward(*args)
-
-class ExistsQuantifier(Quantifier):
-    def __init__(self, method="max"):
-        self.method = method
-
-    def forward(self, *args):
-        tensors = [arg for arg in args if isinstance(arg, torch.Tensor)]
-        if self.method == "max":
-            return torch.max(torch.stack(tensors))
-        elif self.method == "mean":
-            return torch.mean(torch.stack(tensors))
-        elif self.method == "prod":
-            return torch.prod(torch.stack(tensors))
-        else:
-            raise ValueError(f"Unknown method: {self.method}")
 
 class ForallQuantifier(Quantifier):
     def __init__(self, method="min"):
-        self.method = method
+        super().__init__(method)
 
-    def forward(self, *args):
-        tensors = [arg for arg in args if isinstance(arg, torch.Tensor)]
-        if self.method == "min":
-            return torch.min(torch.stack(tensors))
-        elif self.method == "mean":
-            return torch.mean(torch.stack(tensors))
-        elif self.method == "prod":
-            return torch.prod(torch.stack(tensors))
-        else:
-            raise ValueError(f"Unknown method: {self.method}")
+    def __call__(self, truth_values, dim=None):
+        if not isinstance(truth_values, torch.Tensor):
+            truth_values = torch.tensor(truth_values, dtype=torch.float32)
+        return self.agg_op(truth_values, dim=dim)
+
+class ExistsQuantifier(Quantifier):
+    def __init__(self, method="pmean"):
+        super().__init__(method)
+
+    def __call__(self, truth_values, dim=None):
+        if not isinstance(truth_values, torch.Tensor):
+            truth_values = torch.tensor(truth_values, dtype=torch.float32)
+        return self.agg_op(truth_values, dim=dim)

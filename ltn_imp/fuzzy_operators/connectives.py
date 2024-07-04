@@ -111,7 +111,9 @@ class ImpliesConnective(BinaryConnective):
         return torch.where(a <= b, torch.ones_like(a), b / a)
 
     def implies_luk(self, a, b):
-        return torch.minimum(1. - a + b, torch.ones_like(a))
+        return torch.minimum( 1.0 - a + b, torch.ones_like(a))
+
+
 
 class IffConnective(BinaryConnective):
     def __init__(self, implementation_name="default"):

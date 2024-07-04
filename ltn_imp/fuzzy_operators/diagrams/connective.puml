@@ -1,5 +1,4 @@
-@startuml
-title Fuzzy Logic Connectives
+@startuml title Fuzzy Logic Connectives
 
 abstract class Connective {
     +forward(*args)

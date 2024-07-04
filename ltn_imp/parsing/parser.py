@@ -21,7 +21,7 @@ class ExpressionVisitor:
         Implies = ImpliesConnective(implementation_name=connective_impls.get('implies', 'kleene_dienes'))
         Equiv = IffConnective(implementation_name=connective_impls.get('iff', 'default'))
 
-        Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'max'))
+        Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
         Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'min'))
 
         self.connective_map = {
@@ -31,6 +31,7 @@ class ExpressionVisitor:
             logic.IffExpression: Equiv,
             logic.NegatedExpression : Not
         }
+
         self.quantifier_map = {
             logic.ExistsExpression: Exists,
             logic.AllExpression: Forall
@@ -81,7 +82,8 @@ class ExpressionVisitor:
         quantifier = self.quantifier_map.get(type(expression))
         if quantifier:
             term = self.visit(expression.term)
-            return lambda variable_mapping: quantifier([], term(variable_mapping))
+            print(f"Quantifier: {quantifier}, Term: {term}")
+            return lambda variable_mapping: quantifier(term(variable_mapping))
         else:
             raise NotImplementedError(f"Unsupported quantifier expression type: {type(expression)}")
 

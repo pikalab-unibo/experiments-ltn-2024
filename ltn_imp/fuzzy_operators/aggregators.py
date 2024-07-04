@@ -1,47 +1,93 @@
 from abc import ABC, abstractmethod
 import torch
 
-# Base class for satisfaction aggregation operators
-class SatAggConnective(ABC):
+class AggregationOperator(ABC):
+    """
+    Abstract class for aggregation operators.
+
+    Every aggregation operator must inherit from this class
+    and implement the `__call__()` method.
+    """
+    
     @abstractmethod
-    def aggregate(self, *values):
+    def __call__(self, xs, dim=None, keepdim=False, mask=None):
+        """
+        Implements the behavior of the aggregation operator.
+
+        Parameters
+        ----------
+        xs: torch.Tensor
+            The tensor on which the aggregation operator is applied.
+        dim: tuple of int, optional
+            The dimensions over which to aggregate.
+        keepdim: bool, optional
+            Whether to retain the reduced dimensions in the output tensor.
+        mask: torch.Tensor, optional
+            A boolean mask to exclude certain values from aggregation.
+
+        Returns
+        -------
+        torch.Tensor
+            The result of the aggregation.
+        """
         pass
 
-    def __call__(self, *values):
-        return self.aggregate(*values)
+class AggregMin(AggregationOperator):
+    def __call__(self, xs, dim=None, keepdim=False, mask=None):
+        if mask is not None:
+            xs = torch.where(~mask, torch.tensor(float('inf'), dtype=xs.dtype), xs)
+        return torch.amin(xs, dim=dim, keepdim=keepdim)
 
-class SatAgg(SatAggConnective):
-    def __init__(self, implementation_name="pmean", p=2, stable=True):
+
+class AggregPMean(AggregationOperator):
+    def __init__(self, p=2):
         self.p = p
-        self.stable = stable
 
-        implementations = {
-            "pmean": self.p_mean_agg,
-            "pmean_error": self.p_mean_error_agg,
-            "prod": self.prod_agg
-        }
+    def __call__(self, xs, dim=None, keepdim=False, mask=None):
+        if mask is not None:
+            # Apply mask to exclude certain values
+            xs = xs * mask
+            sum_p = torch.sum(xs ** self.p, dim=dim, keepdim=keepdim)
+            count_p = torch.sum(mask, dim=dim, keepdim=keepdim)
+        else:
+            sum_p = torch.sum(xs ** self.p, dim=dim, keepdim=keepdim)
+            count_p = xs.size(dim) if dim is not None else xs.numel()
 
-        if implementation_name not in implementations:
-            raise ValueError(f"Unknown implementation: {implementation_name}")
+        return (sum_p / count_p) ** (1 / self.p)
 
-        self.implementation = implementations[implementation_name]
+class AggregPMeanError(AggregationOperator):
+    def __init__(self, p=2):
+        self.p = p
 
-    def aggregate(self, *values):
-        return self.implementation(*values)
+    def __call__(self, xs, dim=None, keepdim=False, mask=None):
+        if mask is not None:
+            # Apply mask to exclude certain values
+            xs = torch.where(~mask, torch.tensor(0.0, dtype=xs.dtype), xs)
+            sum_p = torch.sum((1 - xs) ** self.p, dim=dim, keepdim=keepdim)
+            count_p = torch.sum(mask, dim=dim, keepdim=keepdim)
+        else:
+            sum_p = torch.sum((1 - xs) ** self.p, dim=dim, keepdim=keepdim)
+            count_p = xs.size(dim) if dim is not None else xs.numel()
 
-    def p_mean_agg(self, *values):
-        xs = torch.stack(values)
-        if self.stable:
-            xs = (1 - 1e-4) * xs + 1e-4
-        return torch.pow(torch.mean(torch.pow(xs, self.p), dim=0), 1 / self.p)
+        return 1 - (sum_p / count_p) ** (1 / self.p)
+    
 
-    def p_mean_error_agg(self, *values):
-        xs = torch.stack(values)
-        if self.stable:
-            xs = (1 - 1e-4) * xs + 1e-4
-        errors = 1 - xs
-        return 1 - torch.pow(torch.mean(torch.pow(errors, self.p), dim=0), 1 / self.p)
+class SatAgg:
+    def __init__(self, agg_op = AggregPMeanError(p=2)):
+        if not isinstance(agg_op, AggregationOperator):
+            raise TypeError("agg_op must be an instance of AggregationOperator")
+        self.agg_op = agg_op
 
-    def prod_agg(self, *values):
-        xs = torch.stack(values)
-        return torch.prod(xs, dim=0)
+    def __call__(self, *closed_formulas):
+        # Collect the truth values from the closed formulas
+        truth_values = [torch.tensor(cf, dtype=torch.float32) if not isinstance(cf, torch.Tensor) else cf for cf in closed_formulas]
+        
+        # Ensure all inputs are scalar tensors
+        if not all(tv.shape == torch.Size([]) for tv in truth_values):
+            raise ValueError("All closed_formulas must be scalar tensors")
+
+        # Stack the truth values into a single tensor
+        truth_values = torch.stack(truth_values)
+
+        # Apply the aggregation operator
+        return self.agg_op(truth_values, dim=0)
