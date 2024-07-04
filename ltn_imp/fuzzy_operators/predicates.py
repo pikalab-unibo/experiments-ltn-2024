@@ -1,19 +1,26 @@
 import torch
+import inspect
 
 class Predicate:
     def __init__(self, model: torch.nn.Module):
         self.model = model
 
-    def forward(self, *args):
-        # Check the number of arguments the model's forward method expects
-        num_args = self.model.forward.__code__.co_argcount - 1  # Subtract 1 for 'self'
-        if num_args == 1:
-            inputs = torch.cat(args, dim=-1) if len(args) > 1 else args[0]
-            return self.model(inputs)
-        elif num_args == len(args):
-            return self.model(*args)
-        else:
-            raise ValueError(f"Model expects {num_args} arguments, but got {len(args)}.")
+    def forward(self, *args, **kwargs):
+        # Get the signature of the model's forward method
+        signature = inspect.signature(self.model.forward)
+        parameters = signature.parameters
+        
+        # Extract only the required parameters, ignoring 'self'
+        required_params = [p for p in parameters.values() if p.default == inspect.Parameter.empty and p.name != 'self']
 
-    def __call__(self, *args):
-        return self.forward(*args)
+        # Check if the number of provided arguments matches the required ones
+        if len(args) == len(required_params):
+            return self.model(*args, **kwargs)
+        else:
+            # Match args to the model's parameters
+            bound_args = signature.bind_partial(*args, **kwargs)
+            bound_args.apply_defaults()
+            return self.model(*bound_args.args, **bound_args.kwargs)
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
