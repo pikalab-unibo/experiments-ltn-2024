@@ -1,14 +1,18 @@
 from nltk.sem import logic
 from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective
-from ltn_imp.fuzzy_operators.predicates import Predicate 
+from ltn_imp.fuzzy_operators.predicates import Predicate
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
 from ltn_imp.fuzzy_operators.functions import Function
+from ltn_imp.visitor import Visitor, make_visitable
 from nltk.sem.logic import Expression
 
-class ExpressionVisitor:
+
+make_visitable(logic.Expression)
+
+
+class ExpressionVisitor(Visitor):
 
     def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None):
-
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
@@ -36,21 +40,6 @@ class ExpressionVisitor:
             logic.ExistsExpression: Exists,
             logic.AllExpression: Forall
         }
-
-    def visit(self, expression):
-        if isinstance(expression, logic.ApplicationExpression):
-            return self.visit_ApplicationExpression(expression)
-        elif isinstance(expression, logic.BinaryExpression):
-            return self.visit_BinaryExpression(expression)
-        elif isinstance(expression, logic.NegatedExpression):
-            return self.visit_NegatedExpression(expression)
-        elif isinstance(expression, logic.QuantifiedExpression):
-            return self.visit_QuantifiedExpression(expression)
-        else:
-            return self.generic_visit(expression)
-
-    def generic_visit(self, expression):
-        raise NotImplementedError(f"No visit method for {expression.__class__.__name__}")
 
     def visit_ApplicationExpression(self, expression):
         functor = expression.function
@@ -86,17 +75,8 @@ class ExpressionVisitor:
         else:
             raise NotImplementedError(f"Unsupported quantifier expression type: {type(expression)}")
 
-# Add the accept method dynamically to Expression and all its subclasses
-def add_accept_method(cls):
-    cls.accept = lambda self, visitor: visitor.visit(self)
 
 def convert_to_ltn(expression, predicates, functions, connective_impls=None, quantifier_impls=None):
-
-    for subclass in logic.Expression.__subclasses__():
-        add_accept_method(subclass)
-        for subsubclass in subclass.__subclasses__():
-            add_accept_method(subsubclass)
-
     expression = Expression.fromstring(expression)
     visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls )
     return expression.accept(visitor)
