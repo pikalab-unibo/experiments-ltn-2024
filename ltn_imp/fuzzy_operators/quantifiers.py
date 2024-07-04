@@ -20,7 +20,7 @@ class Quantifier(ABC):
         pass
 
 class ForallQuantifier(Quantifier):
-    def __init__(self, method="min"):
+    def __init__(self, method="pmean_error"):
         super().__init__(method)
 
     def __call__(self, truth_values, dim=None):

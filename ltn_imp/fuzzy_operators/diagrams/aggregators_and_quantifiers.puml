@@ -1,0 +1,56 @@
+@startuml title Fuzzy Logic Aggregators and Quantifiers
+
+!define AbstractClass class
+!define Interface interface
+
+AbstractClass AggregationOperator {
+    +__call__(torch.Tensor xs, tuple dim=None, bool keepdim=False, torch.Tensor mask=None): torch.Tensor
+}
+
+class AggregMin {
+    +__call__(torch.Tensor xs, tuple dim=None, bool keepdim=False, torch.Tensor mask=None): torch.Tensor
+}
+
+class AggregPMean {
+    -int p
+    +__init__(int p=2)
+    +__call__(torch.Tensor xs, tuple dim=None, bool keepdim=False, torch.Tensor mask=None): torch.Tensor
+}
+
+class AggregPMeanError {
+    -int p
+    +__init__(int p=2)
+    +__call__(torch.Tensor xs, tuple dim=None, bool keepdim=False, torch.Tensor mask=None): torch.Tensor
+}
+
+class SatAgg {
+    -AggregationOperator agg_op
+    +__init__(AggregationOperator agg_op=AggregPMeanError(p=2))
+    +__call__(torch.Tensor *closed_formulas): torch.Tensor
+}
+
+AbstractClass Quantifier {
+    -AggregationOperator agg_op
+    +__init__(str method)
+    +__call__(torch.Tensor truth_values, tuple dim=None): torch.Tensor
+}
+
+class ForallQuantifier {
+    +__init__(str method="pmean_error")
+    +__call__(torch.Tensor truth_values, tuple dim=None): torch.Tensor
+}
+
+class ExistsQuantifier {
+    +__init__(str method="pmean")
+    +__call__(torch.Tensor truth_values, tuple dim=None): torch.Tensor
+}
+
+AggregationOperator <|-- AggregMin
+AggregationOperator <|-- AggregPMean
+AggregationOperator <|-- AggregPMeanError
+Quantifier <|-- ForallQuantifier
+Quantifier <|-- ExistsQuantifier
+SatAgg --> AggregationOperator
+Quantifier --> AggregationOperator
+
+@enduml

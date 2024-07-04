@@ -82,7 +82,6 @@ class ExpressionVisitor:
         quantifier = self.quantifier_map.get(type(expression))
         if quantifier:
             term = self.visit(expression.term)
-            print(f"Quantifier: {quantifier}, Term: {term}")
             return lambda variable_mapping: quantifier(term(variable_mapping))
         else:
             raise NotImplementedError(f"Unsupported quantifier expression type: {type(expression)}")
