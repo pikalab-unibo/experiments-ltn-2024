@@ -6,3 +6,5 @@ __pycache__/
 htmlcov/
 .mypy_cache
 dist/
+ltn_imp/automation/
+examples/datasets/

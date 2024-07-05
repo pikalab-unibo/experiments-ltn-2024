@@ -16,6 +16,7 @@ readme = "README.md"
 python = ">= 3.10.0, < 4.0.0"
 torch = "^2.3.1"
 nltk = "^3.8.1"
+pytorch-accelerated = "^0.1.49"
 
 [tool.poetry.group.dev.dependencies]
 poetry = "^1.7.0"
@@ -28,6 +29,13 @@ matplotlib = "^3.9.0"
 ltntorch = "^1.0.1"
 pandas = "^2.2.2"
 scikit-learn = "^1.5.0"
+poethepoet = "^0.27.0"
+
+[tool.poe.tasks]
+create-dataset-dir = { shell = "mkdir -p examples/datasets" }
+download-iris-training = { shell = "curl -L -o examples/datasets/iris_training.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/iris_training.csv" }
+download-iris-test = { shell = "curl -L -o examples/datasets/iris_test.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/iris_test.csv" }
+download-datasets = { sequence = ["create-dataset-dir", "download-iris-training", "download-iris-test"] }
 
 [[tool.poetry.source]]
 name = "PyPI"
