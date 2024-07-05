@@ -26,112 +26,169 @@ class UnaryConnective(Connective):
     def forward(self, a):
         return self.implementation(a)
 
+# And Connective and its subclasses
 class AndConnective(BinaryConnective):
-    def __init__(self, implementation_name="min", stable=True):
+    def __init__(self, implementation_method, stable=True):
         self.stable = stable
-        method_name = f"and_{implementation_name}"
-
-        if not hasattr(self, method_name):
-            raise ValueError(f"Unknown implementation: {implementation_name}")
-
-        implementation_method = getattr(self, method_name)
         super().__init__(implementation_method)
 
-    def and_min(self, a, b):
+class MinAndConnective(AndConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a, b):
         return torch.minimum(a, b)
 
-    def and_prod(self, a, b):
+class ProdAndConnective(AndConnective):
+    def __init__(self, stable=True):
+        implementation_method = self.implementation
+        super().__init__(implementation_method, stable=stable)
+
+    def implementation(self, a, b):
         eps = 1e-4
         if self.stable:
             a = (1 - eps) * a + eps
             b = (1 - eps) * b + eps
         return torch.mul(a, b)
 
-    def and_luk(self, a, b):
-        return torch.maximum(a + b - 1, torch.zeros_like(a))
-
-class OrConnective(BinaryConnective):
-    def __init__(self, implementation_name="max", stable=True):
-        self.stable = stable
-        method_name = f"or_{implementation_name}"
-
-        if not hasattr(self, method_name):
-            raise ValueError(f"Unknown implementation: {implementation_name}")
-
-        implementation_method = getattr(self, method_name)
+class LukAndConnective(AndConnective):
+    def __init__(self):
+        implementation_method = self.implementation
         super().__init__(implementation_method)
 
-    def or_max(self, a, b):
+    def implementation(self, a, b):
+        return torch.maximum(a + b - 1, torch.zeros_like(a))
+
+class DefaultAndConnective(MinAndConnective):
+    pass
+
+# Or Connective and its subclasses
+class OrConnective(BinaryConnective):
+    def __init__(self, implementation_method, stable=True):
+        self.stable = stable
+        super().__init__(implementation_method)
+
+class MaxOrConnective(OrConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a, b):
         return torch.maximum(a, b)
 
-    def or_prob_sum(self, a, b):
+class ProbSumOrConnective(OrConnective):
+    def __init__(self, stable=True):
+        implementation_method = self.implementation
+        super().__init__(implementation_method, stable=stable)
+
+    def implementation(self, a, b):
         eps = 1e-4
         if self.stable:
             a = (1 - eps) * a
             b = (1 - eps) * b
         return a + b - a * b
 
-    def or_luk(self, a, b):
-        return torch.minimum(a + b, torch.ones_like(a))
-
-class ImpliesConnective(BinaryConnective):
-    def __init__(self, implementation_name="kleene_dienes", stable=True):
-        self.stable = stable
-        method_name = f"implies_{implementation_name}"
-
-        if not hasattr(self, method_name):
-            raise ValueError(f"Unknown implementation: {implementation_name}")
-
-        implementation_method = getattr(self, method_name)
+class LukOrConnective(OrConnective):
+    def __init__(self):
+        implementation_method = self.implementation
         super().__init__(implementation_method)
 
-    def implies_kleene_dienes(self, a, b):
+    def implementation(self, a, b):
+        return torch.minimum(a + b, torch.ones_like(a))
+
+class DefaultOrConnective(MaxOrConnective):
+    pass
+
+# Implies Connective and its subclasses
+class ImpliesConnective(BinaryConnective):
+    def __init__(self, implementation_method, stable=True):
+        self.stable = stable
+        super().__init__(implementation_method)
+
+class KleeneDienesImpliesConnective(ImpliesConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a, b):
         return torch.maximum(1. - a, b)
 
-    def implies_godel(self, a, b):
+class GodelImpliesConnective(ImpliesConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a, b):
         return torch.where(a <= b, torch.ones_like(a), b)
 
-    def implies_reichenbach(self, a, b):
+class ReichenbachImpliesConnective(ImpliesConnective):
+    def __init__(self, stable=True):
+        implementation_method = self.implementation
+        super().__init__(implementation_method, stable=stable)
+
+    def implementation(self, a, b):
         eps = 1e-4
         if self.stable:
             a = (1 - eps) * a + eps
             b = (1 - eps) * b
         return 1. - a + a * b
 
-    def implies_goguen(self, a, b):
+class GoguenImpliesConnective(ImpliesConnective):
+    def __init__(self, stable=True):
+        implementation_method = self.implementation
+        super().__init__(implementation_method, stable=stable)
+
+    def implementation(self, a, b):
         eps = 1e-4
         if self.stable:
             a = (1 - eps) * a + eps
         return torch.where(a <= b, torch.ones_like(a), b / a)
 
-    def implies_luk(self, a, b):
+class LukImpliesConnective(ImpliesConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a, b):
         return torch.minimum(1.0 - a + b, torch.ones_like(a))
 
+class DefaultImpliesConnective(KleeneDienesImpliesConnective):
+    pass
+
+# Iff Connective and its subclasses
 class IffConnective(BinaryConnective):
-    def __init__(self, implementation_name="default"):
-        method_name = f"iff_{implementation_name}"
-
-        if not hasattr(self, method_name):
-            raise ValueError(f"Unknown implementation: {implementation_name}")
-
-        implementation_method = getattr(self, method_name)
+    def __init__(self, implementation_method):
         super().__init__(implementation_method)
 
-    def iff_default(self, a, b):
+class DefaultIffConnective(IffConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a, b):
         return 1 - torch.abs(a - b)
 
+# Not Connective and its subclasses
 class NotConnective(UnaryConnective):
-    def __init__(self, implementation_name="standard"):
-        method_name = f"not_{implementation_name}"
-
-        if not hasattr(self, method_name):
-            raise ValueError(f"Unknown implementation: {implementation_name}")
-
-        implementation_method = getattr(self, method_name)
+    def __init__(self, implementation_method):
         super().__init__(implementation_method)
 
-    def not_standard(self, a):
+class StandardNotConnective(NotConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a):
         return 1 - a
 
-    def not_godel(self, a):
+class GodelNotConnective(NotConnective):
+    def __init__(self):
+        implementation_method = self.implementation
+        super().__init__(implementation_method)
+
+    def implementation(self, a):
         return torch.eq(a, 0.).float()
+
+class DefaultNotConnective(StandardNotConnective):
+    pass

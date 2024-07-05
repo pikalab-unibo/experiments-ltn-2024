@@ -5,9 +5,19 @@ from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifi
 from ltn_imp.fuzzy_operators.functions import Function
 from ltn_imp.visitor import Visitor, make_visitable
 from nltk.sem.logic import Expression
-
+import ltn_imp.fuzzy_operators.connectives as Connectives
 
 make_visitable(logic.Expression)
+
+
+def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
+    prefix = prefix.lower()
+    for k in dir(module):
+        obj = getattr(module, k)
+        if isinstance(obj, type) and k.lower().startswith(prefix) and issubclass(obj, superclass):
+            return obj()
+    
+    raise KeyError(f'No subtype of {superclass} found in module {module} with prefix "{prefix}"')
 
 
 class ExpressionVisitor(Visitor):
@@ -19,11 +29,11 @@ class ExpressionVisitor(Visitor):
         self.predicates = predicates
         self.functions = functions
 
-        And = AndConnective(implementation_name=connective_impls.get('and', 'min'))
-        Or = OrConnective(implementation_name=connective_impls.get('or', 'max'))
-        Not = NotConnective(implementation_name=connective_impls.get('not', 'standard'))
-        Implies = ImpliesConnective(implementation_name=connective_impls.get('implies', 'kleene_dienes'))
-        Equiv = IffConnective(implementation_name=connective_impls.get('iff', 'default'))
+        And = get_subclass_with_prefix(module=Connectives, superclass=AndConnective, prefix=connective_impls.get('and', 'default'))
+        Or = get_subclass_with_prefix(module=Connectives, superclass=OrConnective, prefix=connective_impls.get('or', 'default'))
+        Not = get_subclass_with_prefix(module=Connectives, superclass=NotConnective, prefix=connective_impls.get('not', 'default'))
+        Implies = get_subclass_with_prefix(module=Connectives, superclass=ImpliesConnective, prefix=connective_impls.get('implies', 'default'))
+        Equiv = get_subclass_with_prefix(module=Connectives, superclass=IffConnective, prefix=connective_impls.get('iff', 'default'))
 
         Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
         Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'min'))
