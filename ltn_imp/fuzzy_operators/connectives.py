@@ -28,22 +28,20 @@ class UnaryConnective(Connective):
 
 # And Connective and its subclasses
 class AndConnective(BinaryConnective):
-    def __init__(self, implementation_method, stable=True):
+    def __init__(self, implementation, stable=True):
         self.stable = stable
-        super().__init__(implementation_method)
+        super().__init__(implementation)
 
 class MinAndConnective(AndConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return torch.minimum(a, b)
 
 class ProdAndConnective(AndConnective):
     def __init__(self, stable=True):
-        implementation_method = self.implementation
-        super().__init__(implementation_method, stable=stable)
+        super().__init__(self.implementation, stable=stable)
 
     def implementation(self, a, b):
         eps = 1e-4
@@ -54,8 +52,7 @@ class ProdAndConnective(AndConnective):
 
 class LukAndConnective(AndConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return torch.maximum(a + b - 1, torch.zeros_like(a))
@@ -65,22 +62,20 @@ class DefaultAndConnective(MinAndConnective):
 
 # Or Connective and its subclasses
 class OrConnective(BinaryConnective):
-    def __init__(self, implementation_method, stable=True):
+    def __init__(self, implementation, stable=True):
         self.stable = stable
-        super().__init__(implementation_method)
+        super().__init__(implementation)
 
 class MaxOrConnective(OrConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return torch.maximum(a, b)
 
 class ProbSumOrConnective(OrConnective):
     def __init__(self, stable=True):
-        implementation_method = self.implementation
-        super().__init__(implementation_method, stable=stable)
+        super().__init__(self.implementation, stable=stable)
 
     def implementation(self, a, b):
         eps = 1e-4
@@ -91,8 +86,7 @@ class ProbSumOrConnective(OrConnective):
 
 class LukOrConnective(OrConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return torch.minimum(a + b, torch.ones_like(a))
@@ -102,30 +96,27 @@ class DefaultOrConnective(MaxOrConnective):
 
 # Implies Connective and its subclasses
 class ImpliesConnective(BinaryConnective):
-    def __init__(self, implementation_method, stable=True):
+    def __init__(self, implementation, stable=True):
         self.stable = stable
-        super().__init__(implementation_method)
+        super().__init__(implementation)
 
 class KleeneDienesImpliesConnective(ImpliesConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return torch.maximum(1. - a, b)
 
 class GodelImpliesConnective(ImpliesConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return torch.where(a <= b, torch.ones_like(a), b)
 
 class ReichenbachImpliesConnective(ImpliesConnective):
     def __init__(self, stable=True):
-        implementation_method = self.implementation
-        super().__init__(implementation_method, stable=stable)
+        super().__init__(self.implementation, stable=stable)
 
     def implementation(self, a, b):
         eps = 1e-4
@@ -136,8 +127,7 @@ class ReichenbachImpliesConnective(ImpliesConnective):
 
 class GoguenImpliesConnective(ImpliesConnective):
     def __init__(self, stable=True):
-        implementation_method = self.implementation
-        super().__init__(implementation_method, stable=stable)
+        super().__init__(self.implementation, stable=stable)
 
     def implementation(self, a, b):
         eps = 1e-4
@@ -147,8 +137,7 @@ class GoguenImpliesConnective(ImpliesConnective):
 
 class LukImpliesConnective(ImpliesConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return torch.minimum(1.0 - a + b, torch.ones_like(a))
@@ -158,34 +147,31 @@ class DefaultImpliesConnective(KleeneDienesImpliesConnective):
 
 # Iff Connective and its subclasses
 class IffConnective(BinaryConnective):
-    def __init__(self, implementation_method):
-        super().__init__(implementation_method)
+    def __init__(self, implementation):
+        super().__init__(implementation)
 
 class DefaultIffConnective(IffConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a, b):
         return 1 - torch.abs(a - b)
 
 # Not Connective and its subclasses
 class NotConnective(UnaryConnective):
-    def __init__(self, implementation_method):
-        super().__init__(implementation_method)
+    def __init__(self, implementation):
+        super().__init__(implementation)
 
 class StandardNotConnective(NotConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a):
         return 1 - a
 
 class GodelNotConnective(NotConnective):
     def __init__(self):
-        implementation_method = self.implementation
-        super().__init__(implementation_method)
+        super().__init__(self.implementation)
 
     def implementation(self, a):
         return torch.eq(a, 0.).float()
