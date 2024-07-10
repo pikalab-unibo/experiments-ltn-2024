@@ -82,10 +82,6 @@ class SatAgg:
         # Collect the truth values from the closed formulas
         truth_values = [torch.tensor(cf, dtype=torch.float32) if not isinstance(cf, torch.Tensor) else cf for cf in closed_formulas]
         
-        # Ensure all inputs are scalar tensors
-        if not all(tv.shape == torch.Size([]) for tv in truth_values):
-            raise ValueError("All closed_formulas must be scalar tensors")
-
         # Stack the truth values into a single tensor
         truth_values = torch.stack(truth_values)
 

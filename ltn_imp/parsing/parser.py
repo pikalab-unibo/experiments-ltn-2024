@@ -52,14 +52,17 @@ class ExpressionVisitor(Visitor):
         }
 
     def visit_ApplicationExpression(self, expression):
+        variables = expression.variables()
+        variables = sorted(variables, key=lambda x: str(x))
+
         functor = expression.function
         while hasattr(functor, 'function'):
             functor = functor.function
         functor = str(functor)
         if functor in self.predicates:
-            return lambda var_mapping: Predicate(self.predicates[functor])(*[var_mapping[str(var)] for var in expression.variables()])
+            return lambda var_mapping: Predicate(self.predicates[functor])(*[var_mapping[str(var)] for var in variables])
         elif functor in self.functions:
-            return lambda var_mapping: Function(self.functions[functor])(*[var_mapping[str(var)] for var in expression.variables()])
+            return lambda var_mapping: Function(self.functions[functor])(*[var_mapping[str(var)] for var in variables])
         else:
             raise ValueError(f"Unknown functor: {type(functor)}")
 
