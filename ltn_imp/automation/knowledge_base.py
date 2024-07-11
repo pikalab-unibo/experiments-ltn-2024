@@ -32,13 +32,16 @@ class KnowledgeBase:
     
     def partition_data(self, var_mapping, batch, loader, num_classes, cls):
 
-        for i, var in enumerate( loader.variables ) :
-            
-            data, labels = batch # TODO: If the dataloader is sending more than one instance ( Classifier(x,y,z) ), they need to be unpacked correctly here. 
+        *data, labels = batch 
 
+        for i, var in enumerate( loader.variables ):
+
+             # TODO: If the dataloader is sending more than one instance ( Classifier(x,y,z) ), they need to be unpacked correctly here
+            var_data = data[i] 
             indices = (labels == cls).nonzero(as_tuple=True)[0]
-            var_mapping[loader.target] = torch.eye(num_classes)[cls].unsqueeze(0) 
-            var_mapping[var] = data[indices]
+            var_mapping[var] = var_data[indices]
+
+        var_mapping[loader.target] = torch.eye(num_classes)[cls].unsqueeze(0) 
 
     def optimize(self, num_epochs=10, log_steps=10):
         all_loaders = set(loader for loaders in self.rule_to_data_loader_mapping.values() for loader in loaders)
