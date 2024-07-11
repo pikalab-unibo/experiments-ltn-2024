@@ -1,5 +1,22 @@
 from itertools import cycle
 
+
+class LoaderWrapper:
+    def __init__(self, variables, num_classes, target, loader):
+        self.variables = variables
+        self.num_classes = num_classes
+        self.target = target
+        self.loader = loader 
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        return next(iter(self.loader))
+    
+    def __len__(self):
+        return len(self.loader)
+    
 class CombinedDataLoader:
     def __init__(self, loaders):
         self.loaders = loaders

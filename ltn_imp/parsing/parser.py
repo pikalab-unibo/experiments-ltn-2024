@@ -55,11 +55,6 @@ class ExpressionVisitor(Visitor):
         variables = expression.variables()
         variables = sorted(variables, key=lambda x: str(x))
 
-        print(f"variables: {variables}")
-        print()
-        print(f"expression: {expression}")
-        print()
-        
         functor = expression.function
         while hasattr(functor, 'function'):
             functor = functor.function
