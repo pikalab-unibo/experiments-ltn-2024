@@ -10,12 +10,12 @@ sat_agg_op = SatAgg()
 # TODO: How to partition the data for each rule (i.e, how to map the data to the variables in the rules especially when the rules use more than one predicate)
 
 class KnowledgeBase:
-    def __init__(self, rules, rule_to_data_loader_mapping, loader_to_variable, loader_classes, target_variable, predicates=None, functions=None, connective_impls=None, quantifier_impls=None, lr = 0.001):
+    def __init__(self, rules, rule_to_data_loader_mapping, loader_to_variable, loader_classes, loader_to_target, predicates=None, functions=None, connective_impls=None, quantifier_impls=None, lr = 0.001):
         self.rules = [ convert_to_ltn(rule, predicates=predicates, functions=functions, connective_impls=connective_impls, quantifier_impls=quantifier_impls) for rule in rules ]
         self.predicates = predicates
         self.rule_to_data_loader_mapping = { self.rules[i] : rule_to_data_loader_mapping[expression] for i, expression in enumerate( rule_to_data_loader_mapping) }
         self.loader_to_variable = loader_to_variable
-        self.target_variable = target_variable
+        self.loader_to_target = loader_to_target
         self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.loader_classes = loader_classes
 
@@ -46,7 +46,7 @@ class KnowledgeBase:
         for i, var in enumerate( self.loader_to_variable[loader] ) :
             data, labels = batch
             indices = (labels == cls).nonzero(as_tuple=True)[0]
-            var_mapping[self.target_variable] = torch.eye(num_classes)[cls].unsqueeze(0) 
+            var_mapping[self.loader_to_target[loader]] = torch.eye(num_classes)[cls].unsqueeze(0) 
             var_mapping[var] = data[indices]
 
     def optimize(self, num_epochs=10, log_steps=10):
@@ -59,17 +59,21 @@ class KnowledgeBase:
             for i in range(len(combined_loader)):
                 rule_outputs = []
                 current_batches = next(combined_loader)
+
                 for rule in self.rules:
                     loaders = self.rule_to_data_loader_mapping[rule]
-                    for loader in loaders:
-                        batch = current_batches[loader]
-                        for cls in range(0, self.loader_classes[loader]): 
-                            var_mapping = {}
-                            self.partition_data(var_mapping, batch, loader, self.loader_classes[loader], cls)
-                            rule_output = rule(var_mapping)
-                            if epoch % log_steps == 0 and i == len(combined_loader) - 1:
-                                print(f"Rule {rule} produced output: {rule_output} for class {cls}")
-                            rule_outputs.append(rule_output)
+                    max_classes = max(self.loader_classes[loader] for loader in loaders)
+
+                    var_mapping = {}
+                    
+                    for cls in range(max_classes):
+                        for loader in loaders:
+                            if cls < self.loader_classes[loader]: 
+                                batch = current_batches[loader]
+                                self.partition_data(var_mapping, batch, loader, self.loader_classes[loader], cls)
+                                
+                        rule_output = rule(var_mapping)
+                        rule_outputs.append(rule_output)
 
                 self.optimizer.zero_grad()
                 loss = self.loss(rule_outputs)
