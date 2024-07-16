@@ -13,6 +13,7 @@ class KnowledgeBase:
         self.functions = functions
         self.connective_impls = connective_impls
         self.quantifier_impls = quantifier_impls
+        self.rule_to_data_loader_mapping = rule_to_data_loader_mapping
         self.set_rules()
 
         try:
@@ -20,13 +21,13 @@ class KnowledgeBase:
         except:
             print("No parameters to optimize")
 
-        self.rule_to_data_loader_mapping = { self.rules[i] : rule_to_data_loader_mapping[expression] for i, expression in enumerate( rule_to_data_loader_mapping) }
-
     def set_rules(self):
         self.declerations = {}
         self.rules = [ convert_to_ltn(rule, predicates=self.predicates,
                                     functions=self.functions, connective_impls=self.connective_impls, 
                                     quantifier_impls=self.quantifier_impls, declerations =  self.declerations) for rule in self.expressions ]
+        
+        self.rule_to_data_loader_mapping = { self.rules[i] : self.rule_to_data_loader_mapping[expression] for i, expression in enumerate( self.rule_to_data_loader_mapping) }
     
     def loss(self, rule_outputs):
         # Compute satisfaction level
@@ -79,7 +80,7 @@ class KnowledgeBase:
                             if cls < loader.num_classes: 
                                 batch = current_batches[loader]
                                 self.partition_data(var_mapping, batch, loader, loader.num_classes, cls)
-                                
+                        
                         rule_output = rule(var_mapping)
                         rule_outputs.append(rule_output)
 

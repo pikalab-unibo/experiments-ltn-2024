@@ -55,6 +55,8 @@ class ExpressionVisitor(Visitor):
         else:
             self.declerations = declerations
 
+        self.declerars = {}
+
         And = get_subclass_with_prefix(module=Connectives, superclass=AndConnective, prefix=connective_impls.get('and', 'default'))
         Or = get_subclass_with_prefix(module=Connectives, superclass=OrConnective, prefix=connective_impls.get('or', 'default'))
         Not = get_subclass_with_prefix(module=Connectives, superclass=NotConnective, prefix=connective_impls.get('not', 'default'))
@@ -79,9 +81,9 @@ class ExpressionVisitor(Visitor):
             logic.AllExpression: Forall
         }
 
-    def handle_predicate(self, variables, functor, var_mapping, constants):
+    def handle_predicate(self, variables, functor, var_mapping, constants, expression):
         results = []
-        
+
         for var in variables:
             try:
                 # Attempt to retrieve and process each variable
@@ -89,10 +91,14 @@ class ExpressionVisitor(Visitor):
                 results.append(variable_value)
 
             except KeyError as e: # If the key is not found, it is a declared variable. 
-                if var in self.declerations:
-                    results.append(self.declerations[var])
+                if var in self.declerations: # TODO: Either a declared variable is being used ( Which is fine ) or its trying get re-declared ( Which is not fine )
+                    if self.declerars[var] != expression:
+                        results.append(self.declerations[var])
+                    else:
+                        continue
                 else:
                     self.declerations[var] = Predicate(self.predicates[functor])(*results)
+                    self.declerars[var] = expression 
                     return torch.tensor([1.0])
             
         # Combine results with constants and call the function
@@ -104,7 +110,7 @@ class ExpressionVisitor(Visitor):
         else:
             raise ValueError(f"Unknown functor: {functor}")    
 
-    def handle_function(self, variables, functor, var_mapping, constants):
+    def handle_function(self, variables, functor, var_mapping, constants, expression):
         results = []
         
         for var in variables:
@@ -114,10 +120,14 @@ class ExpressionVisitor(Visitor):
                 results.append(variable_value)
 
             except KeyError as e: # If the key is not found, it is a declared variable. 
-                if var in self.declerations:
-                    results.append(self.declerations[var])
+                if var in self.declerations: # TODO: Either a declared variable is being used ( Which is fine ) or its trying get re-declared ( Which is not fine )
+                    if self.declerars[var] != expression:
+                        results.append(self.declerations[var])
+                    else:
+                        continue
                 else:
-                    self.declerations[var] = Function(self.functions[functor])(*results)
+                    self.declerations[var] = Predicate(self.predicates[functor])(*results)
+                    self.declerars[var] = expression 
                     return torch.tensor([1.0])
             
         # Combine results with constants and call the function
@@ -141,9 +151,9 @@ class ExpressionVisitor(Visitor):
         functor = str(functor)
 
         if functor in self.predicates:
-            return lambda var_mapping: self.handle_predicate(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants)
+            return lambda var_mapping: self.handle_predicate(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants, expression=expression)
         elif functor in self.functions:
-            return lambda var_mapping: self.handle_function(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants)
+            return lambda var_mapping: self.handle_function(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants, expression=expression)
         else:
             raise ValueError(f"Unknown functor: {functor}")
 
