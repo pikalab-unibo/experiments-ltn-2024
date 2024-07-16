@@ -31,6 +31,46 @@ class MoreThan():
     def forward(self, tensor1, tensor2):
         return torch.gt(tensor1, tensor2).float()
     
+class Add():
+    def __init__(self):
+        pass
+
+    def __call__(self, tensor1, tensor2):
+        return self.forward(tensor1, tensor2)
+
+    def forward(self, tensor1, tensor2):
+        return torch.add(tensor1, tensor2).float()
+
+class Subtract():
+    def __init__(self):
+        pass
+
+    def __call__(self, tensor1, tensor2):
+        return self.forward(tensor1, tensor2)
+
+    def forward(self, tensor1, tensor2):
+        return torch.sub(tensor1, tensor2).float()
+
+class Multiply():
+    def __init__(self):
+        pass
+
+    def __call__(self, tensor1, tensor2):
+        return self.forward(tensor1, tensor2)
+
+    def forward(self, tensor1, tensor2):
+        return torch.mul(tensor1, tensor2).float()
+
+class Divide():
+    def __init__(self):
+        pass
+
+    def __call__(self, tensor1, tensor2):
+        return self.forward(tensor1, tensor2)
+
+    def forward(self, tensor1, tensor2):
+        return torch.div(tensor1, tensor2).float()
+    
 def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
     prefix = prefix.lower()
     for k in dir(module):
@@ -43,7 +83,7 @@ def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
 
 class ExpressionVisitor(Visitor):
 
-    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None, declerations = None):
+    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None, declerations = None, declearars = None):
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
@@ -55,7 +95,11 @@ class ExpressionVisitor(Visitor):
         else:
             self.declerations = declerations
 
-        self.declerars = {}
+        if declearars is None:
+            self.declerars = {}
+        else:
+            self.declerars = declearars
+
 
         And = get_subclass_with_prefix(module=Connectives, superclass=AndConnective, prefix=connective_impls.get('and', 'default'))
         Or = get_subclass_with_prefix(module=Connectives, superclass=OrConnective, prefix=connective_impls.get('or', 'default'))
@@ -81,59 +125,51 @@ class ExpressionVisitor(Visitor):
             logic.AllExpression: Forall
         }
 
-    def handle_predicate(self, variables, functor, var_mapping, constants, expression):
+    def handle_predicate(self, variables, functor, var_mapping,  expression):
         results = []
 
         for var in variables:
             try:
                 # Attempt to retrieve and process each variable
-                variable_value = var_mapping[str(var)]
+                variable_value = self.visit(var)(var_mapping)
                 results.append(variable_value)
 
             except KeyError as e: # If the key is not found, it is a declared variable. 
                 if var in self.declerations: # TODO: Either a declared variable is being used ( Which is fine ) or its trying get re-declared ( Which is not fine )
-                    if self.declerars[var] != expression:
-                        results.append(self.declerations[var])
+                    if self.declerars[str(var)] != expression:
+                        results.append(self.declerations[str(var)])
                     else:
                         continue
                 else:
-                    self.declerations[var] = Predicate(self.predicates[functor])(*results)
-                    self.declerars[var] = expression 
+                    self.declerations[str(var)] = Predicate(self.predicates[functor])(*results)
+                    self.declerars[str(var)] = expression 
                     return torch.tensor([1.0])
             
-        # Combine results with constants and call the function
-        for const in constants:
-            results.append(const)
-
         if functor in self.predicates:
             return Predicate(self.predicates[functor])(*results)
         else:
             raise ValueError(f"Unknown functor: {functor}")    
 
-    def handle_function(self, variables, functor, var_mapping, constants, expression):
+    def handle_function(self, variables, functor, var_mapping, expression):
         results = []
-        
+                
         for var in variables:
             try:
                 # Attempt to retrieve and process each variable
-                variable_value = var_mapping[str(var)]
+                variable_value = self.visit(var)(var_mapping)
                 results.append(variable_value)
 
             except KeyError as e: # If the key is not found, it is a declared variable. 
                 if var in self.declerations: # TODO: Either a declared variable is being used ( Which is fine ) or its trying get re-declared ( Which is not fine )
-                    if self.declerars[var] != expression:
-                        results.append(self.declerations[var])
+                    if self.declerars[str(var)] != expression:
+                        results.append(self.declerations[str(var)])
                     else:
                         continue
                 else:
-                    self.declerations[var] = Function(self.functions[functor])(*results)
-                    self.declerars[var] = expression 
+                    self.declerations[str(var)] = Function(self.functions[functor])(*results)
+                    self.declerars[str(var)] = expression 
                     return torch.tensor([1.0])
             
-        # Combine results with constants and call the function
-        for const in constants:
-            results.append(const)
-
         if functor in self.functions:
             return Function(self.functions[functor])(*results)
         else:
@@ -141,9 +177,9 @@ class ExpressionVisitor(Visitor):
 
     def visit_ApplicationExpression(self, expression):
 
-        variables = expression.variables()
-        variables = sorted(variables, key=lambda x: str(x))
-        constants = [ torch.tensor( [float(str(constant))] ) for constant in expression.constants() ]
+        variables = []
+        for arg in expression.args:
+            variables.append(arg)
 
         functor = expression.function
         while hasattr(functor, 'function'):
@@ -151,13 +187,13 @@ class ExpressionVisitor(Visitor):
         functor = str(functor)
 
         if functor in self.predicates:
-            return lambda var_mapping: self.handle_predicate(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants, expression=expression)
+            return lambda var_mapping: self.handle_predicate(variables=variables, functor=functor, var_mapping=var_mapping,  expression=expression)
         elif functor in self.functions:
-            return lambda var_mapping: self.handle_function(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants, expression=expression)
+            return lambda var_mapping: self.handle_function(variables=variables, functor=functor, var_mapping=var_mapping, expression=expression)
         else:
             raise ValueError(f"Unknown functor: {functor}")
 
-    def delay_execution(self, left, right, var_mapping, connective):
+    def delay_execution(self, left, right, var_mapping, connective, expression):
 
         try:
             left_value = left(var_mapping)
@@ -173,7 +209,7 @@ class ExpressionVisitor(Visitor):
         if connective:
             left = self.visit(expression.first)
             right = self.visit(expression.second)
-            return lambda var_mapping: self.delay_execution(left, right, var_mapping, connective)
+            return lambda var_mapping: self.delay_execution(left, right, var_mapping, connective, expression)
         else:
             raise NotImplementedError(f"Unsupported binary expression type: {type(expression)}")
 
@@ -196,23 +232,27 @@ class ExpressionVisitor(Visitor):
     def handle_variable(self, variable_mapping, expression):
         var = list(expression.variables())[0]
         try:
-            return variable_mapping[var]
+            return variable_mapping[str(var)]
         except KeyError as e:
             try:
-                return self.declerations[var]
+                return self.declerations[str(var)]
             except KeyError as e:
-                raise ValueError(f"Variable {var} not recognized")
+                raise KeyError(f"Variable {var} not recognized")
     
     def visit_IndividualVariableExpression(self, expression):
         return lambda variable_mapping: self.handle_variable(variable_mapping, expression)
 
 
-def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls=None, quantifier_impls=None, declerations = None):
+def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls=None, quantifier_impls=None, declerations = None, declerars = None):
 
     functions["lessThan"] = LessThan()
     functions["moreThan"] = MoreThan()
+    functions["add"] = Add()
+    functions["subtract"] = Subtract()
+    functions["multiply"] = Multiply()
+    functions["divide"] = Divide()
 
     expression = transform_expression(expression)
     expression = Expression.fromstring(expression)
-    visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls, declerations = declerations )
+    visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls, declerations = declerations, declearars=declerars )
     return expression.accept(visitor)

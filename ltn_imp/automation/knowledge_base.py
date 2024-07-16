@@ -23,9 +23,10 @@ class KnowledgeBase:
 
     def set_rules(self):
         self.declerations = {}
+        self.declerars = {}
         self.rules = [ convert_to_ltn(rule, predicates=self.predicates,
                                     functions=self.functions, connective_impls=self.connective_impls, 
-                                    quantifier_impls=self.quantifier_impls, declerations =  self.declerations) for rule in self.expressions ]
+                                    quantifier_impls=self.quantifier_impls, declerations =  self.declerations, declerars = self.declerars) for rule in self.expressions ]
         
         self.rule_to_data_loader_mapping = { self.rules[i] : self.rule_to_data_loader_mapping[expression] for i, expression in enumerate( self.rule_to_data_loader_mapping) }
     
