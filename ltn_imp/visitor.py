@@ -5,7 +5,7 @@ class Visitor:
             if hasattr(self, method_name):
                 visitor = getattr(self, method_name)
                 return visitor(node)
-        raise ValueError(f"No visitor for {type(node)} found in {self}.")
+        raise ValueError(f"No visitor for {node} of type {type(node)} found in {self}.")
 
 
 

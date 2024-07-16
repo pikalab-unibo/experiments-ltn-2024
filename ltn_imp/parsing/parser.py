@@ -1,15 +1,37 @@
 from nltk.sem import logic
-from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective
+from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective, EqConnective
 from ltn_imp.fuzzy_operators.predicates import Predicate
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
 from ltn_imp.fuzzy_operators.functions import Function
 from ltn_imp.visitor import Visitor, make_visitable
 from nltk.sem.logic import Expression
 import ltn_imp.fuzzy_operators.connectives as Connectives
+from ltn_imp.parsing.expression_transformations import transform_expression
+import torch 
 
 make_visitable(logic.Expression)
 
+class LessThan():
+    def __init__(self):
+        pass
 
+    def __call__(self, tensor1, tensor2):
+        return self.forward(tensor1, tensor2)
+
+    def forward(self, tensor1, tensor2):
+        return torch.lt(tensor1, tensor2).float()
+
+class MoreThan():
+    def __init__(self):
+        pass
+
+    def __call__(self, tensor1, tensor2):
+        return self.forward(tensor1, tensor2)
+
+    def forward(self, tensor1, tensor2):
+        print(tensor1, tensor2)
+        return torch.gt(tensor1, tensor2).float()
+    
 def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
     prefix = prefix.lower()
     for k in dir(module):
@@ -28,12 +50,14 @@ class ExpressionVisitor(Visitor):
 
         self.predicates = predicates
         self.functions = functions
+        self.declerations = {}
 
         And = get_subclass_with_prefix(module=Connectives, superclass=AndConnective, prefix=connective_impls.get('and', 'default'))
         Or = get_subclass_with_prefix(module=Connectives, superclass=OrConnective, prefix=connective_impls.get('or', 'default'))
         Not = get_subclass_with_prefix(module=Connectives, superclass=NotConnective, prefix=connective_impls.get('not', 'default'))
         Implies = get_subclass_with_prefix(module=Connectives, superclass=ImpliesConnective, prefix=connective_impls.get('implies', 'default'))
         Equiv = get_subclass_with_prefix(module=Connectives, superclass=IffConnective, prefix=connective_impls.get('iff', 'default'))
+        Eq = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq', 'default'))
 
         Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
         Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'min'))
@@ -43,7 +67,8 @@ class ExpressionVisitor(Visitor):
             logic.OrExpression: Or,
             logic.ImpExpression: Implies,
             logic.IffExpression: Equiv,
-            logic.NegatedExpression : Not
+            logic.NegatedExpression : Not, 
+            logic.EqualityExpression : Eq
         }
 
         self.quantifier_map = {
@@ -51,27 +76,91 @@ class ExpressionVisitor(Visitor):
             logic.AllExpression: Forall
         }
 
+    def handle_predicate(self, variables, functor, var_mapping, constants):
+        results = []
+        
+        for var in variables:
+            try:
+                # Attempt to retrieve and process each variable
+                variable_value = var_mapping[str(var)]
+                results.append(variable_value)
+
+            except KeyError as e: # If the key is not found, it is a declared variable. 
+                if var in self.declerations:
+                    results.append(self.declerations[var])
+                else:
+                    self.declerations[var] = Predicate(self.predicates[functor])(*results)
+                    return torch.tensor([1.0])
+            
+        # Combine results with constants and call the function
+        for const in constants:
+            results.append(const)
+
+        if functor in self.predicates:
+            return Predicate(self.predicates[functor])(*results)
+        else:
+            raise ValueError(f"Unknown functor: {functor}")    
+
+    def handle_function(self, variables, functor, var_mapping, constants):
+        results = []
+        
+        for var in variables:
+            try:
+                # Attempt to retrieve and process each variable
+                variable_value = var_mapping[str(var)]
+                results.append(variable_value)
+
+            except KeyError as e: # If the key is not found, it is a declared variable. 
+                if var in self.declerations:
+                    results.append(self.declerations[var])
+                else:
+                    self.declerations[var] = Function(self.functions[functor])(*results)
+                    return torch.tensor([1.0])
+            
+        # Combine results with constants and call the function
+        for const in constants:
+            results.append(const)
+
+        if functor in self.functions:
+            return Function(self.functions[functor])(*results)
+        else:
+            raise ValueError(f"Unknown functor: {functor}")      
+
     def visit_ApplicationExpression(self, expression):
+
         variables = expression.variables()
         variables = sorted(variables, key=lambda x: str(x))
+        constants = [ torch.tensor( [float(str(constant))] ) for constant in expression.constants() ]
 
         functor = expression.function
         while hasattr(functor, 'function'):
             functor = functor.function
         functor = str(functor)
-        if functor in self.predicates:
-            return lambda var_mapping: Predicate(self.predicates[functor])(*[var_mapping[str(var)] for var in variables])
-        elif functor in self.functions:
-            return lambda var_mapping: Function(self.functions[functor])(*[var_mapping[str(var)] for var in variables])
-        else:
-            raise ValueError(f"Unknown functor: {type(functor)}")
 
+        if functor in self.predicates:
+            return lambda var_mapping: self.handle_predicate(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants)
+        elif functor in self.functions:
+            return lambda var_mapping: self.handle_function(variables=variables, functor=functor, var_mapping=var_mapping, constants=constants)
+        else:
+            raise ValueError(f"Unknown functor: {functor}")
+
+    def delay_execution(self, left, right, var_mapping, connective):
+
+        try:
+            left_value = left(var_mapping)
+            right_value = right(var_mapping)
+        except:
+            right_value = right(var_mapping)
+            left_value = left(var_mapping)
+
+        return connective(left_value, right_value)
+        
     def visit_BinaryExpression(self, expression):
         connective = self.connective_map.get(type(expression))
         if connective:
             left = self.visit(expression.first)
             right = self.visit(expression.second)
-            return lambda var_mapping: connective(left(var_mapping), right(var_mapping))
+            return lambda var_mapping: self.delay_execution(left, right, var_mapping, connective)
         else:
             raise NotImplementedError(f"Unsupported binary expression type: {type(expression)}")
 
@@ -87,9 +176,30 @@ class ExpressionVisitor(Visitor):
             return lambda variable_mapping: quantifier(term(variable_mapping))
         else:
             raise NotImplementedError(f"Unsupported quantifier expression type: {type(expression)}")
+        
+    def visit_ConstantExpression(self, expression):
+        return lambda variable_mapping: torch.tensor(float(str(expression)))
+
+    def handle_variable(self, variable_mapping, expression):
+        var = list(expression.variables())[0]
+        try:
+            return variable_mapping[var]
+        except KeyError as e:
+            try:
+                return self.declerations[var]
+            except KeyError as e:
+                raise ValueError(f"Variable {var} not recognized")
+    
+    def visit_IndividualVariableExpression(self, expression):
+        return lambda variable_mapping: self.handle_variable(variable_mapping, expression)
 
 
-def convert_to_ltn(expression, predicates, functions, connective_impls=None, quantifier_impls=None):
+def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls=None, quantifier_impls=None):
+
+    functions["lessThan"] = LessThan()
+    functions["moreThan"] = MoreThan()
+
+    expression = transform_expression(expression)
     expression = Expression.fromstring(expression)
     visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls )
     return expression.accept(visitor)

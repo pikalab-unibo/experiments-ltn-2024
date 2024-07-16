@@ -178,3 +178,14 @@ class GodelNotConnective(NotConnective):
 
 class DefaultNotConnective(StandardNotConnective):
     pass
+
+class EqConnective(BinaryConnective):
+    def __init__(self, implementation):
+        super().__init__(implementation)
+
+class DefaultEqConnective(EqConnective):
+    def __init__(self):
+        super().__init__(self.implementation)
+
+    def implementation(self, a, b):
+        return torch.eq(a, b).float()

@@ -5,8 +5,9 @@ from ltn_imp.fuzzy_operators.connectives import (
     MaxOrConnective, ProbSumOrConnective, LukOrConnective, 
     StandardNotConnective, GodelNotConnective, 
     KleeneDienesImpliesConnective, GodelImpliesConnective, ReichenbachImpliesConnective, GoguenImpliesConnective, LukImpliesConnective, 
-    DefaultIffConnective
+    DefaultIffConnective, DefaultEqConnective
 )
+from ltn_imp.parsing.parser import LessThan, MoreThan
 
 class BaseTestConnective(unittest.TestCase):
 
@@ -109,6 +110,28 @@ class TestIffConnectives(BaseTestConnective):
         b = torch.tensor([0.7])
         expected = torch.tensor([0.8])
         self._test_connective(DefaultIffConnective, a, b, expected)
+
+class TestEqConnectives(BaseTestConnective):
+    
+        def test_eq(self):
+            a = torch.tensor([0.5])
+            b = torch.tensor([0.5])
+            expected = torch.tensor([1.0])
+            self._test_connective(DefaultEqConnective, a, b, expected)
+
+class TestComparisonFunctions(BaseTestConnective):
+
+    def test_less_than(self):
+        a = torch.tensor([1, 2, 3], dtype=torch.float32)
+        b = torch.tensor([2, 2, 2], dtype=torch.float32)
+        expected = torch.tensor([1.0, 0.0, 0.0], dtype=torch.float32)
+        self._test_connective(LessThan, a, b, expected)
+
+    def test_more_than(self):
+        a = torch.tensor([1, 2, 3], dtype=torch.float32)
+        b = torch.tensor([2, 2, 2], dtype=torch.float32)
+        expected = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32)
+        self._test_connective(MoreThan, a, b, expected)
 
 if __name__ == '__main__':
     unittest.main()

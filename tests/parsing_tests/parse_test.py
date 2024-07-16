@@ -72,5 +72,35 @@ class TestParsing(unittest.TestCase):
         self._test_expression('forall x. (exists y. Man(x) and Women(x, y))', quantifier_impls=quantifier_impls, value=torch.tensor([1.0]))
         self._test_expression('exists x. (forall y. Man(x) and Women(x, y))', quantifier_impls=quantifier_impls, value=torch.tensor([1.0]))
 
+    def test_less_than_expression(self):
+        self._test_expression('man(x,z1) and z1 < 3', value=torch.tensor([1.0]))
+
+    def test_more_than_expression(self):
+        self._test_expression('man(x,z1) and (z1 > 1)', value=torch.tensor([1.0]))
+
+    def test_less_than_or_equal_expression(self):
+        self._test_expression('man(x,z1) and (z1 <= 2)', value=torch.tensor([1.0]))
+
+    def test_more_than_or_equal_expression(self):
+        self._test_expression('man(x,z1) and (z1 >= 2)', value=torch.tensor([1.0]))
+
+    def test_complex_comparison_expression(self):
+        self._test_expression('Man(x) and ( man(x,z1) and (z1 > 1))', value=torch.tensor([1.0]))
+
+    def test_flip_less_than_expression(self):
+        self._test_expression('man(x,z1) and z1 < 3', value=torch.tensor([1.0]))
+
+    def test_flip_more_than_expression(self):
+        self._test_expression('man(x,z1) and (z1 > 1)', value=torch.tensor([1.0]))
+
+    def test_flip_less_than_or_equal_expression(self):
+        self._test_expression('man(x,z1) and (z1 <= 2)', value=torch.tensor([1.0]))
+
+    def test_flip_more_than_or_equal_expression(self):
+        self._test_expression('man(x,z1) and (z1 >= 2)', value=torch.tensor([1.0]))
+
+    def test_flip_complex_comparison_expression(self):
+        self._test_expression('Man(x) and ( man(x,z1) and (z1 > 1))', value=torch.tensor([1.0]))
+
 if __name__ == '__main__':
     unittest.main()
