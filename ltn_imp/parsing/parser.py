@@ -126,7 +126,7 @@ class ExpressionVisitor(Visitor):
                     else:
                         continue
                 else:
-                    self.declerations[var] = Predicate(self.predicates[functor])(*results)
+                    self.declerations[var] = Function(self.functions[functor])(*results)
                     self.declerars[var] = expression 
                     return torch.tensor([1.0])
             
