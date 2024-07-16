@@ -29,7 +29,6 @@ class MoreThan():
         return self.forward(tensor1, tensor2)
 
     def forward(self, tensor1, tensor2):
-        print(tensor1, tensor2)
         return torch.gt(tensor1, tensor2).float()
     
 def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
@@ -44,13 +43,17 @@ def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
 
 class ExpressionVisitor(Visitor):
 
-    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None):
+    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None, declerations = None):
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
         self.predicates = predicates
         self.functions = functions
-        self.declerations = {}
+
+        if declerations is None:
+            self.declerations = {}
+        else:
+            self.declerations = declerations
 
         And = get_subclass_with_prefix(module=Connectives, superclass=AndConnective, prefix=connective_impls.get('and', 'default'))
         Or = get_subclass_with_prefix(module=Connectives, superclass=OrConnective, prefix=connective_impls.get('or', 'default'))
@@ -194,12 +197,12 @@ class ExpressionVisitor(Visitor):
         return lambda variable_mapping: self.handle_variable(variable_mapping, expression)
 
 
-def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls=None, quantifier_impls=None):
+def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls=None, quantifier_impls=None, declerations = None):
 
     functions["lessThan"] = LessThan()
     functions["moreThan"] = MoreThan()
 
     expression = transform_expression(expression)
     expression = Expression.fromstring(expression)
-    visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls )
+    visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls, declerations = declerations )
     return expression.accept(visitor)
