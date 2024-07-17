@@ -119,8 +119,17 @@ class TestParsing(unittest.TestCase):
     def test_arithmetic_with_comparison(self):
         self._test_expression('(man(x) + 2) > 3', value=torch.tensor([1.0]))  # True as tensor[1.0]
         self._test_expression('3 < (man(x) + 2)', value=torch.tensor([1.0]))  # True as tensor[1.0]
+        self._test_expression("5 <= 1 + 1 + 1 + 1 + 1", value=torch.tensor([1.0]))  # True as tensor[1.0]
+    
+    def test_pemdas_operations(self):
+        self._test_expression('2 + 3 * 4', value=torch.tensor([14.0]))  # Multiplication before addition
+        self._test_expression('(2 + 3) * 4', value=torch.tensor([20.0]))  # Parentheses first
+        self._test_expression('4 / 2 * 2', value=torch.tensor([4.0]))  # Division and multiplication left to right
+        self._test_expression('4 * 2 / 2', value=torch.tensor([4.0]))  # Multiplication and division left to right
+        self._test_expression('2 + 3 * 4 - 5', value=torch.tensor([9.0]))  # Multiplication before addition and subtraction
+        self._test_expression('10 - 2 + 3', value=torch.tensor([11.0]))  # Addition and subtraction left to right
+        self._test_expression('10 / (2 + 3)', value=torch.tensor([2.0]))  # Parentheses first
 
-     
 
 if __name__ == '__main__':
     unittest.main()
