@@ -112,6 +112,9 @@ class TestParsing(unittest.TestCase):
         self._test_expression('(man(x) + 3) * 2', value=torch.tensor([10.0]))
         self._test_expression('(man(x) - 1) / 2', value=torch.tensor([0.5]))
         self._test_expression('2 * (man(x) + 1)', value=torch.tensor([6.0]))
+        self._test_expression('man(x) + 2 + 1', value=torch.tensor([5.0]))
+        self._test_expression('1 + 1 + 1 + 1 + 1', value=torch.tensor([5.0]))
+        self._test_expression('man(x) + man(x) + man(x)', value=torch.tensor([6.0]))
 
     def test_arithmetic_with_comparison(self):
         self._test_expression('(man(x) + 2) > 3', value=torch.tensor([1.0]))  # True as tensor[1.0]

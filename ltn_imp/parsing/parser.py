@@ -6,7 +6,7 @@ from ltn_imp.fuzzy_operators.functions import Function
 from ltn_imp.visitor import Visitor, make_visitable
 from nltk.sem.logic import Expression
 import ltn_imp.fuzzy_operators.connectives as Connectives
-from ltn_imp.parsing.expression_transformations import transform_expression
+from ltn_imp.parsing.expression_transformations import transform
 import torch 
 
 make_visitable(logic.Expression)
@@ -252,7 +252,8 @@ def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls
     functions["multiply"] = Multiply()
     functions["divide"] = Divide()
 
-    expression = transform_expression(expression)
-    expression = Expression.fromstring(expression)
+            
+    expression = Expression.fromstring(transform(expression))
+
     visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls, declerations = declerations, declearars=declerars )
     return expression.accept(visitor)

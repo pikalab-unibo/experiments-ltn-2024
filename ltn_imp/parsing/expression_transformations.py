@@ -118,3 +118,20 @@ def transform_expression(expression_str):
             expression_str = expression_str.replace(subexpr, transformed_subexpr)
 
     return expression_str
+
+
+def transform(expression):
+
+    operators = ["+", "-", "*", "/", "<", "<=", ">", ">="]
+
+    before = expression
+    after = transform_expression(expression)
+    
+    while before != after: # This means that the expression has been transformed but there is a mistake cauising the regex to fail 
+        if any(op in after for op in operators):
+            before = after 
+            after = transform_expression(after)
+        else:
+            break
+
+    return after
