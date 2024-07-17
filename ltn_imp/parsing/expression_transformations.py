@@ -4,7 +4,7 @@ def transform_more(expression_str):
     parts = expression_str.split(">")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"moreThan({first}, {second})"
+        transformed_expression = f"moreThan({first},{second})"
         return transformed_expression
     else:
         return expression_str
@@ -13,7 +13,7 @@ def transform_more_equal(expression_str):
     parts = expression_str.split(">=")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"moreThan({first}, {second}) or ({first} = {second})"
+        transformed_expression = f"moreThan({first},{second}) or ({first} = {second})"
         return transformed_expression
     else:
         return expression_str
@@ -22,7 +22,7 @@ def transform_less(expression_str):
     parts = expression_str.split("<")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"lessThan({first}, {second})"
+        transformed_expression = f"lessThan({first},{second})"
         return transformed_expression
     else:
         return expression_str
@@ -31,7 +31,7 @@ def transform_less_equal(expression_str):
     parts = expression_str.split("<=")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"lessThan({first}, {second}) or ({first} = {second})"
+        transformed_expression = f"lessThan({first},{second}) or ({first} = {second})"
         return transformed_expression
     else:
         return expression_str
@@ -40,7 +40,7 @@ def transform_add(expression_str):
     parts = expression_str.split("+")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"add({first}, {second})"
+        transformed_expression = f"add({first},{second})"
         return transformed_expression
     else:
         return expression_str
@@ -49,7 +49,7 @@ def transform_subtract(expression_str):
     parts = expression_str.split("-")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"subtract({first}, {second})"
+        transformed_expression = f"subtract({first},{second})"
         return transformed_expression
     else:
         return expression_str
@@ -58,7 +58,7 @@ def transform_multiply(expression_str):
     parts = expression_str.split("*")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"multiply({first}, {second})"
+        transformed_expression = f"multiply({first},{second})"
         return transformed_expression
     else:
         return expression_str
@@ -67,22 +67,32 @@ def transform_divide(expression_str):
     parts = expression_str.split("/")
     if len(parts) == 2:
         first, second = parts[0].strip(), parts[1].strip()
-        transformed_expression = f"divide({first}, {second})"
+        transformed_expression = f"divide({first},{second})"
         return transformed_expression
     else:
         return expression_str
 
+def transform_encapsulated(expression_str):
+    # Updated pattern to ensure the left side of the parentheses is empty or whitespace
+    encapsulated_pattern = re.compile(r'(?<!\w)\(([^()]*?(?:\([^()]*\)[^()]*?)*?)\)')
+    while encapsulated_pattern.search(expression_str):
+        expression_str = encapsulated_pattern.sub(lambda x: transform_expression(x.group(1)), expression_str)
+    return expression_str
+
 
 def transform_expression(expression_str):
+
+    expression_str = transform_encapsulated(expression_str)
+
     patterns = {
-        "*": re.compile(r"(\w+\([^\)]*\)|\w+)\s*\*\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
-        "/": re.compile(r"(\w+\([^\)]*\)|\w+)\s*/\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
-        "+": re.compile(r"(\w+\([^\)]*\)|\w+)\s*\+\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
-        "-": re.compile(r"(\w+\([^\)]*\)|\w+)\s*-\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
-        "<=": re.compile(r"(\w+\([^\)]*\)|\w+)\s*<=\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
-        ">=": re.compile(r"(\w+\([^\)]*\)|\w+)\s*>=\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
-        "<": re.compile(r"(\w+\([^\)]*\)|\w+)\s*<\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
-        ">": re.compile(r"(\w+\([^\)]*\)|\w+)\s*>\s*(\w+\([^\)]*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        "*": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*\*\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        "/": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*/\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        "+": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*\+\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        "-": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*-\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        "<=": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*<=\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        ">=": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*>=\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        "<": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*<\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
+        ">": re.compile(r"(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+)\s*>\s*(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\w+(\.\d+)?|\d+(\.\d+)?)"),
     }
 
     for op, pattern in patterns.items():
