@@ -245,12 +245,12 @@ class ExpressionVisitor(Visitor):
 
 def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls=None, quantifier_impls=None, declerations = None, declerars = None):
 
-    functions["lessThan"] = LessThan()
-    functions["moreThan"] = MoreThan()
+    functions["lt"] = LessThan()
+    functions["mt"] = MoreThan()
     functions["add"] = Add()
-    functions["subtract"] = Subtract()
-    functions["multiply"] = Multiply()
-    functions["divide"] = Divide()
+    functions["sub"] = Subtract()
+    functions["mul"] = Multiply()
+    functions["div"] = Divide()
 
             
     expression = Expression.fromstring(transform(expression))

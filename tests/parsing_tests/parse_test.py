@@ -130,6 +130,24 @@ class TestParsing(unittest.TestCase):
         self._test_expression('10 - 2 + 3', value=torch.tensor([11.0]))  # Addition and subtraction left to right
         self._test_expression('10 / (2 + 3)', value=torch.tensor([2.0]))  # Parentheses first
 
+    def test_negative_numbers(self):
+        self._test_expression('-1 + 2', value=torch.tensor([1.0]))
+        self._test_expression('3 + -1', value=torch.tensor([2.0]))
+        self._test_expression('-1 - 2', value=torch.tensor([-3.0]))
+        self._test_expression('2 * -3', value=torch.tensor([-6.0]))
+        self._test_expression('-2 * -3', value=torch.tensor([6.0]))
+        # self._test_expression('-(2 + 3)', value=torch.tensor([-5.0]))
+        # self._test_expression('-(man(x) + 2)', value=torch.tensor([-4.0]))
+        # self._test_expression('man(x) + -2', value=torch.tensor([0.0]))
+
+    def test_negative_numbers_with_comparison(self):
+        self._test_expression('-1 < 0', value=torch.tensor([1.0]))  # True as tensor[1.0]
+        self._test_expression('-1 > 0', value=torch.tensor([0.0]))  # False as tensor[0.0]
+        self._test_expression('-1 <= -1', value=torch.tensor([1.0]))  # True as tensor[1.0]
+        self._test_expression('-1 >= -1', value=torch.tensor([1.0]))  # True as tensor[1.0]
+        self._test_expression('-man(x) < 0', value=torch.tensor([1.0]))  # True as tensor[1.0]
+        self._test_expression('man(x) > -1', value=torch.tensor([1.0]))  # True as tensor[1.0]
+        self._test_expression('-(man(x) + -2) = 0', value=torch.tensor([1.0]))  # True as tensor[1.0]
 
 if __name__ == '__main__':
     unittest.main()
