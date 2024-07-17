@@ -73,7 +73,6 @@ def transform_divide(expression_str):
         return expression_str
     
 def transform_negate(subexpr):
-    print(subexpr)
     return f"mul(sub(0,1),{subexpr})"
 
 
@@ -81,7 +80,7 @@ def transform_encapsulated(expression_str):
     # Updated pattern to ensure the left side of the parentheses is empty or whitespace
     encapsulated_pattern = re.compile(r'(?<!\w)\(([^()]*?(?:\([^()]*\)[^()]*?)*?)\)')
     while encapsulated_pattern.search(expression_str):
-        expression_str = encapsulated_pattern.sub(lambda x: transform_expression(x.group(1)), expression_str)
+        expression_str = encapsulated_pattern.sub(lambda x: transform(x.group(1)), expression_str)
     return expression_str
 
 
@@ -89,7 +88,7 @@ def transform_expression(expression_str):
 
     expression_str = transform_encapsulated(expression_str)
 
-    negation_pattern = re.compile(r'-(\w+\((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*\)|\([^)(]*\)|\w+|\d+(\.\d+)?)')
+    negation_pattern = re.compile(r'-(\S+)')
     while negation_pattern.search(expression_str):
         expression_str = negation_pattern.sub(lambda x: transform_negate(x.group(1)), expression_str, 1)
         
