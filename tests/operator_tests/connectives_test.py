@@ -7,7 +7,7 @@ from ltn_imp.fuzzy_operators.connectives import (
     KleeneDienesImpliesConnective, GodelImpliesConnective, ReichenbachImpliesConnective, GoguenImpliesConnective, LukImpliesConnective, 
     DefaultIffConnective, DefaultEqConnective
 )
-from ltn_imp.parsing.parser import LessThan, MoreThan
+from ltn_imp.parsing.parser import LessThan, MoreThan, Add, Subtract, Multiply, Divide
 
 class BaseTestConnective(unittest.TestCase):
 
@@ -132,6 +132,32 @@ class TestComparisonFunctions(BaseTestConnective):
         b = torch.tensor([2, 2, 2], dtype=torch.float32)
         expected = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32)
         self._test_connective(MoreThan, a, b, expected)
+        
+class TestArithmeticOperations(BaseTestConnective):
+
+    def test_add(self):
+        a = torch.tensor([1, 2, 3], dtype=torch.float32)
+        b = torch.tensor([4, 5, 6], dtype=torch.float32)
+        expected = torch.tensor([5, 7, 9], dtype=torch.float32)
+        self._test_connective(Add, a, b, expected)
+
+    def test_subtract(self):
+        a = torch.tensor([4, 5, 6], dtype=torch.float32)
+        b = torch.tensor([1, 2, 3], dtype=torch.float32)
+        expected = torch.tensor([3, 3, 3], dtype=torch.float32)
+        self._test_connective(Subtract, a, b, expected)
+
+    def test_multiply(self):
+        a = torch.tensor([1, 2, 3], dtype=torch.float32)
+        b = torch.tensor([4, 5, 6], dtype=torch.float32)
+        expected = torch.tensor([4, 10, 18], dtype=torch.float32)
+        self._test_connective(Multiply, a, b, expected)
+
+    def test_divide(self):
+        a = torch.tensor([4.0, 5.0, 6.0], dtype=torch.float32)
+        b = torch.tensor([2.0, 5.0, 3.0], dtype=torch.float32)
+        expected = torch.tensor([2.0, 1.0, 2.0], dtype=torch.float32)
+        self._test_connective(Divide, a, b, expected)
 
 if __name__ == '__main__':
     unittest.main()
