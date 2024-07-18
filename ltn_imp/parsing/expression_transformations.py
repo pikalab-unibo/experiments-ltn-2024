@@ -78,7 +78,7 @@ def transform_negate(subexpr):
 
 def transform_encapsulated(expression_str):
     # Updated pattern to ensure the left side of the parentheses is empty or whitespace
-    encapsulated_pattern = re.compile(r'(?<!\w)\(([^()]*?(?:\([^()]*\)[^()]*?)*?)\)')
+    encapsulated_pattern = re.compile(r'\(([^()]*?(?:\([^()]*\)[^()]*?)*?[\+\-\*\/<>=][^()]*?(?:\([^()]*\)[^()]*?)*?)\)')
     while encapsulated_pattern.search(expression_str):
         expression_str = encapsulated_pattern.sub(lambda x: transform(x.group(1)), expression_str)
     return expression_str
