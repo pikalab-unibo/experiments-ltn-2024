@@ -88,7 +88,7 @@ def transform_expression(expression_str):
 
     expression_str = transform_encapsulated(expression_str)
 
-    negation_pattern = re.compile(r'-(\S+)')
+    negation_pattern = re.compile(r'(?<!<)-(\S+)(?<!>)')
     while negation_pattern.search(expression_str):
         expression_str = negation_pattern.sub(lambda x: transform_negate(x.group(1)), expression_str, 1)
         
