@@ -226,8 +226,14 @@ class ExpressionVisitor(Visitor):
         else:
             raise NotImplementedError(f"Unsupported quantifier expression type: {type(expression)}")
         
+    def handle_constant(self, variable_mapping, expression):
+        try:
+            return torch.tensor(float(str(expression)))
+        except:
+            return torch.tensor(variable_mapping[str(expression)])
+        
     def visit_ConstantExpression(self, expression):
-        return lambda variable_mapping: torch.tensor(float(str(expression)))
+        return lambda variable_mapping: self.handle_constant(variable_mapping, expression)
 
     def handle_variable(self, variable_mapping, expression):
         var = list(expression.variables())[0]
