@@ -1,6 +1,6 @@
 import unittest
 import torch
-from ltn_imp.parsing.parser import convert_to_ltn
+from ltn_imp.parsing.parser import LTNConverter
 
 class Man(torch.nn.Module):
     def forward(self, x):
@@ -38,7 +38,8 @@ class TestParsing(unittest.TestCase):
         if expected is None: 
             expected = {k: v for k,v in globals().items() if len(k) == 1}
 
-        ltn_expr = convert_to_ltn(expr, predicates, functions, connective_impls=connective_impls, quantifier_impls=quantifier_impls)
+        converter = LTNConverter(predicates, functions, connective_impls=connective_impls, quantifier_impls=quantifier_impls)
+        ltn_expr = converter(expr)
         result = ltn_expr(expected)
         self.assertAlmostEqualTensor(result, value)
             

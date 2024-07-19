@@ -23,7 +23,11 @@ class CombinedDataLoader:
         self.iters = {loader: cycle(loader) for loader in loaders}
         self.current_batches = {loader: None for loader in loaders}
         self.step()
-        self.max_length = max(len(loader) for loader in loaders)
+
+        if loaders != []:
+            self.max_length = max(len(loader) for loader in loaders)
+        else:
+            self.max_length = 1
 
     def __iter__(self):
         return self

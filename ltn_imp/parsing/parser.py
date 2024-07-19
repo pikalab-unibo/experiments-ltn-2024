@@ -248,18 +248,36 @@ class ExpressionVisitor(Visitor):
     def visit_IndividualVariableExpression(self, expression):
         return lambda variable_mapping: self.handle_variable(variable_mapping, expression)
 
+class LTNConverter:
+    def __init__(self, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declerations=None, declerars=None):
+        self.predicates = predicates
+        self.functions = functions
+        self.connective_impls = connective_impls
+        self.quantifier_impls = quantifier_impls
+        self.declerations = declerations
+        self.declearars = declerars
+        self.expression = None
 
-def convert_to_ltn(expression, predicates = {}, functions = {}, connective_impls=None, quantifier_impls=None, declerations = None, declerars = None):
+        # Adding default functions
+        self.functions["lt"] = LessThan()
+        self.functions["mt"] = MoreThan()
+        self.functions["add"] = Add()
+        self.functions["sub"] = Subtract()
+        self.functions["mul"] = Multiply()
+        self.functions["div"] = Divide()
 
-    functions["lt"] = LessThan()
-    functions["mt"] = MoreThan()
-    functions["add"] = Add()
-    functions["sub"] = Subtract()
-    functions["mul"] = Multiply()
-    functions["div"] = Divide()
+    def __call__(self, expression):
+        expression = Expression.fromstring(transform(expression))
+        self.expression = expression
+        visitor = ExpressionVisitor(
+            self.predicates, 
+            self.functions, 
+            connective_impls=self.connective_impls, 
+            quantifier_impls=self.quantifier_impls, 
+            declerations=self.declerations, 
+            declearars=self.declearars
+        )
+        return expression.accept(visitor)
 
-            
-    expression = Expression.fromstring(transform(expression))
-
-    visitor = ExpressionVisitor(predicates, functions, connective_impls = connective_impls, quantifier_impls = quantifier_impls, declerations = declerations, declearars=declerars )
-    return expression.accept(visitor)
+    def __str__(self):
+        return str(self.expression)

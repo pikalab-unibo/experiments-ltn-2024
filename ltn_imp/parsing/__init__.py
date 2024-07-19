@@ -1,3 +1,3 @@
-from .parser import convert_to_ltn
+from .parser import LTNConverter
 
-__all__ = ["convert_to_ltn"]
+__all__ = ["LTNConverter"]
