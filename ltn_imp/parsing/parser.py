@@ -258,6 +258,7 @@ class ConvertedExpression:
 
     def __str__(self):
         return str(self.expression)
+    
 class LTNConverter:
     def __init__(self, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declerations=None, declerars=None):
         self.predicates = predicates
