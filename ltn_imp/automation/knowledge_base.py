@@ -15,9 +15,11 @@ class KnowledgeBase:
         self.quantifier_impls = quantifier_impls
         self.rule_to_data_loader_mapping = rule_to_data_loader_mapping
         self.constant_mapping = constant_mapping
-        self.set_rules()
+        self.declerations = {}
+        self.declerars = {}
         self.converter = LTNConverter(predicates=self.predicates, functions=self.functions, connective_impls=self.connective_impls, 
                                       quantifier_impls=self.quantifier_impls, declerations =  self.declerations, declerars = self.declerars)
+        self.set_rules()
 
         try:
             self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
@@ -25,10 +27,7 @@ class KnowledgeBase:
             print("No parameters to optimize")
 
     def set_rules(self):
-        self.declerations = {}
-        self.declerars = {}
         self.rules = [ self.converter(rule) for rule in self.expressions ]
-        
         self.rule_to_data_loader_mapping = { self.rules[i] : self.rule_to_data_loader_mapping[expression] for i, expression in enumerate( self.rule_to_data_loader_mapping) }
     
     def loss(self, rule_outputs):
@@ -92,7 +91,6 @@ class KnowledgeBase:
                             rule_output = rule(var_mapping)
                             rule_outputs.append(rule_output)
                             
-                print(rule_outputs)
                 self.optimizer.zero_grad()
                 loss = self.loss(rule_outputs)
                 loss.backward()
