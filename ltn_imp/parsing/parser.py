@@ -248,6 +248,16 @@ class ExpressionVisitor(Visitor):
     def visit_IndividualVariableExpression(self, expression):
         return lambda variable_mapping: self.handle_variable(variable_mapping, expression)
 
+class ConvertedExpression:
+    def __init__(self, expression, converted):
+        self.expression = expression
+        self.converted = converted
+
+    def __call__(self, *args, **kwargs):
+        return self.converted(*args, **kwargs)
+
+    def __str__(self):
+        return str(self.expression)
 class LTNConverter:
     def __init__(self, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declerations=None, declerars=None):
         self.predicates = predicates
@@ -277,7 +287,5 @@ class LTNConverter:
             declerations=self.declerations, 
             declearars=self.declearars
         )
-        return expression.accept(visitor)
+        return ConvertedExpression(self.expression, expression.accept(visitor))
 
-    def __str__(self):
-        return str(self.expression)
