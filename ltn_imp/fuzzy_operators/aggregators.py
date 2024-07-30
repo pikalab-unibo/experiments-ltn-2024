@@ -11,7 +11,6 @@ class AggregMin(AggregationOperator):
         if mask is not None:
             xs = torch.where(~mask, torch.tensor(float('inf'), dtype=xs.dtype, device=xs.device), xs)
         result = torch.amin(xs, dim=dim, keepdim=keepdim)
-        result.retain_grad()
         return result
 
 class AggregPMean(AggregationOperator):
@@ -28,7 +27,6 @@ class AggregPMean(AggregationOperator):
             sum_p = torch.sum(xs ** self.p, dim=dim, keepdim=keepdim)
             count_p = xs.size(dim) if dim is not None else xs.numel()
         result = (sum_p / count_p) ** (1 / self.p)
-        result.retain_grad()
         return result
 
 class AggregPMeanError(AggregationOperator):
@@ -44,7 +42,6 @@ class AggregPMeanError(AggregationOperator):
             sum_p = torch.sum((1 - xs) ** self.p, dim=dim, keepdim=keepdim)
             count_p = xs.size(dim) if dim is not None else xs.numel()
         result = 1 - (sum_p / count_p) ** (1 / self.p)
-        result.retain_grad()
         return result
     
 class SatAgg:
@@ -59,6 +56,5 @@ class SatAgg:
         
         # Stack the truth values into a single tensor
         truth_values = torch.stack(truth_values)
-        truth_values.retain_grad()
         # Apply the aggregation operator
         return self.agg_op(truth_values, dim=0)
