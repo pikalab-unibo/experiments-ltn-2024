@@ -94,15 +94,15 @@ class ConvertedExpression:
         return dot
     
 class ExpressionVisitor(Visitor):
-    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None, declerations=None, declearars=None):
+    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None):
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
         self.predicates = predicates
         self.functions = functions
 
-        self.declerations = declerations if declerations is not None else {}
-        self.declearars = declearars if declearars is not None else {}
+        self.declarations = declarations if declarations is not None else {}
+        self.declarers = declarers if declarers is not None else {}
 
         And = get_subclass_with_prefix(module=Connectives, superclass=AndConnective, prefix=connective_impls.get('and', 'default'))
         Or = get_subclass_with_prefix(module=Connectives, superclass=OrConnective, prefix=connective_impls.get('or', 'default'))
@@ -134,44 +134,34 @@ class ExpressionVisitor(Visitor):
         inputs = []
         predicate = Predicate(self.predicates[functor])
 
-        to_be_declelared = None
+        to_be_declared = None
 
         for i, var in enumerate(variables):
-            if type(var) != nltk.sem.logic.IndividualVariableExpression and type(var) != nltk.sem.logic.ConstantExpression:
-                var = self.visit(var)(var_mapping)
-                inputs.append(var)
-                continue
-
             var = str(var)
+
             if var in var_mapping:
                 inputs.append(var_mapping[var])
-            elif var in self.declerations:
-                if self.declearars[var] == str(expression):
-                    to_be_declelared = variables[i:]
+            elif var in self.declarations:
+                if self.declarers[var] == str(expression):
+                    to_be_declared = variables[i:]
                     break
                 else:
-                    value = self.declerations[var]
-                    value
+                    value = self.declarations[var]
                     inputs.append(value)
             else:
-                try:
-                    tensor_var = torch.tensor(float(var), requires_grad=True)
-                    inputs.append(tensor_var)
-                    continue
-                except:
-                    to_be_declelared = variables[i:]
-                    break
+                to_be_declared = variables[i:]
+                break
 
         results = predicate(*inputs)
-        if type(results) != tuple and results.dim() == 0:
+        
+        if not isinstance(results, tuple) and results.dim() == 0:
             results = results.unsqueeze(0)
             
-        if to_be_declelared is not None:
-            for i, var in enumerate(to_be_declelared):
+        if to_be_declared is not None:
+            for i, var in enumerate(to_be_declared):
                 value = results[i]
-                value
-                self.declerations[str(var)] = value
-                self.declearars[str(var)] = str(expression)
+                self.declarations[str(var)] = value
+                self.declarers[str(var)] = str(expression)
             return torch.tensor([1.0], requires_grad=True)
 
         # Ensuring results is a tensor
@@ -180,52 +170,42 @@ class ExpressionVisitor(Visitor):
         else:
             results_tensor = results
 
-        results_tensor
         self.intermediate_results[functor].append(results_tensor)
         return results_tensor
+
 
     def handle_function(self, variables, functor, var_mapping, expression):
         inputs = []
         func = Function(self.functions[functor])
 
-        to_be_declelared = None
+        to_be_declared = None
 
         for i, var in enumerate(variables):
-            if type(var) != nltk.sem.logic.IndividualVariableExpression and type(var) != nltk.sem.logic.ConstantExpression:
-                var = self.visit(var)(var_mapping)
-                inputs.append(var)
-                continue
-
             var = str(var)
+
             if var in var_mapping:
                 inputs.append(var_mapping[var])
-            elif var in self.declerations:
-                if self.declearars[var] == str(expression):
-                    to_be_declelared = variables[i:]
+            elif var in self.declarations:
+                if self.declarers[var] == str(expression):
+                    to_be_declared = variables[i:]
                     break
                 else:
-                    value = self.declerations[var]
-                    value
+                    value = self.declarations[var]
                     inputs.append(value)
             else:
-                try:
-                    tensor_var = torch.tensor(float(var), requires_grad=True)
-                    inputs.append(tensor_var)
-                    continue
-                except:
-                    to_be_declelared = variables[i:]
-                    break
+                to_be_declared = variables[i:]
+                break
 
         results = func(*inputs)
-        if type(results) != tuple and results.dim() == 0:
+        
+        if not isinstance(results, tuple) and results.dim() == 0:
             results = results.unsqueeze(0)
-
-        if to_be_declelared is not None:
-            for i, var in enumerate(to_be_declelared):
+            
+        if to_be_declared is not None:
+            for i, var in enumerate(to_be_declared):
                 value = results[i]
-                value
-                self.declerations[str(var)] = value
-                self.declearars[str(var)] = str(expression)
+                self.declarations[str(var)] = value
+                self.declarers[str(var)] = str(expression)
             return torch.tensor([1.0], requires_grad=True)
 
         # Ensuring results is a tensor
@@ -233,10 +213,11 @@ class ExpressionVisitor(Visitor):
             results_tensor = torch.stack([res if isinstance(res, torch.Tensor) else torch.tensor(res) for res in results])
         else:
             results_tensor = results
-            
-        results
+
         self.intermediate_results[functor].append(results_tensor)
         return results_tensor
+
+
 
     def visit_ApplicationExpression(self, expression):
         variables = [arg for arg in expression.args]
@@ -289,8 +270,8 @@ class ExpressionVisitor(Visitor):
         var = list(expression.variables())[0]
         if str(var) in variable_mapping:
             return variable_mapping[str(var)]
-        elif str(var) in self.declerations:
-            return self.declerations[str(var)]
+        elif str(var) in self.declarations:
+            return self.declarations[str(var)]
         else:
             raise KeyError(f"Variable {var} not recognized")
     
@@ -307,13 +288,13 @@ class ExpressionVisitor(Visitor):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_constant(variable_mapping, expression), self)
 
 class LTNConverter:
-    def __init__(self, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declerations=None, declerars=None):
+    def __init__(self, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
         self.quantifier_impls = quantifier_impls
-        self.declerations = declerations
-        self.declearars = declerars
+        self.declarations = declarations
+        self.declarers = declarers
         self.expression = None
 
         # Adding default functions
@@ -336,7 +317,7 @@ class LTNConverter:
             self.functions, 
             connective_impls=self.connective_impls, 
             quantifier_impls=self.quantifier_impls, 
-            declerations=self.declerations, 
-            declearars=self.declearars
+            declarations=self.declarations, 
+            declarers=self.declarers
         )
         return ConvertedExpression(self.expression, expression.accept(visitor), visitor)
