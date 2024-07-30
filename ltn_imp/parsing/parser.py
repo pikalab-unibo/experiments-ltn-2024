@@ -137,6 +137,12 @@ class ExpressionVisitor(Visitor):
         to_be_declared = None
 
         for i, var in enumerate(variables):
+
+            if type(var) != nltk.sem.logic.IndividualVariableExpression and type(var) != nltk.sem.logic.ConstantExpression:
+                var = self.visit(var)(var_mapping)
+                inputs.append(var)
+                continue
+    
             var = str(var)
 
             if var in var_mapping:
@@ -181,6 +187,12 @@ class ExpressionVisitor(Visitor):
         to_be_declared = None
 
         for i, var in enumerate(variables):
+
+            if type(var) != nltk.sem.logic.IndividualVariableExpression:
+                var = self.visit(var)(var_mapping)
+                inputs.append(var)
+                continue
+    
             var = str(var)
 
             if var in var_mapping:
