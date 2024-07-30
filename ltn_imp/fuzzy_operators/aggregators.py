@@ -52,7 +52,7 @@ class SatAgg:
 
     def __call__(self, *closed_formulas):
         # Collect the truth values from the closed formulas
-        truth_values = [torch.tensor(cf, dtype=torch.float32, device=xs.device) if not isinstance(cf, torch.Tensor) else cf for cf in closed_formulas]
+        truth_values = [torch.tensor(cf, dtype=torch.float32, device=cf.device) if not isinstance(cf, torch.Tensor) else cf for cf in closed_formulas]
         
         # Stack the truth values into a single tensor
         truth_values = torch.stack(truth_values)
