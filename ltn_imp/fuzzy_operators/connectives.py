@@ -105,7 +105,15 @@ class KleeneDienesImpliesConnective(ImpliesConnective):
         super().__init__(self.implementation)
 
     def implementation(self, a, b):
-        return torch.maximum(1. - a, b)
+        # Ensure a and b have the same shape and are at least 2D tensors
+        if a.ndim == 1:
+            a = a.unsqueeze(1)
+        if b.ndim == 1:
+            b = b.unsqueeze(1)
+
+        # Perform the operation
+        result = torch.maximum(1. - a, b)
+        return result
 
 class GodelImpliesConnective(ImpliesConnective):
     def __init__(self):
@@ -188,4 +196,17 @@ class DefaultEqConnective(EqConnective):
         super().__init__(self.implementation)
 
     def implementation(self, a, b):
-        return torch.eq(a, b).float()
+        # If 'a' and 'b' have the same shape, compare elementwise
+        if a.shape == b.shape:
+            return torch.eq(a, b).float()
+
+        # If 'a' and 'b' have different shapes, handle possible scenarios
+        elif a.dim() == 2 and b.dim() == 1 and a.size(1) == b.size(0):
+            # Unsqueeze and expand 'b' to match the first dimension of 'a'
+            b = b.unsqueeze(0).expand(a.size(0), -1)
+            elementwise_comparison = torch.eq(a, b)
+            rowwise_comparison = torch.all(elementwise_comparison, dim=1).float()
+            return rowwise_comparison
+        
+        else:
+            raise ValueError("Shapes of 'a' and 'b' are not compatible for comparison.")

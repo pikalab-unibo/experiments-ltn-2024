@@ -2,13 +2,15 @@ import torch
 from ltn_imp.fuzzy_operators.aggregators import SatAgg
 from ltn_imp.automation.data_loaders import CombinedDataLoader
 from ltn_imp.parsing.parser import LTNConverter
+from ltn_imp.parsing.ancillary_modules import ModuleFactory
 
 sat_agg_op = SatAgg()
 
 
 class KnowledgeBase:
-    def __init__(self, expressions, rule_to_data_loader_mapping, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, lr = 0.001, constant_mapping = {}):
-        self.expressions = expressions
+    def __init__(self, learning_rules, ancillary_rules, rule_to_data_loader_mapping, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, lr = 0.001, constant_mapping = {}):
+        self.learning_rules = learning_rules
+        self.ancillary_rules = ancillary_rules
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
@@ -19,6 +21,11 @@ class KnowledgeBase:
         self.declerars = {}
         self.converter = LTNConverter(predicates=self.predicates, functions=self.functions, connective_impls=self.connective_impls, 
                                       quantifier_impls=self.quantifier_impls, declerations =  self.declerations, declerars = self.declerars)
+        self.factory = ModuleFactory(converter=self.converter)
+
+        for rule in self.ancillary_rules:
+            self.factory.create_module(rule)
+
         self.set_rules()
 
         try:
@@ -27,7 +34,7 @@ class KnowledgeBase:
             print("No parameters to optimize")
 
     def set_rules(self):
-        self.rules = [ self.converter(rule) for rule in self.expressions ]
+        self.rules = [ self.converter(rule) for rule in self.learning_rules ]
         self.rule_to_data_loader_mapping = { self.rules[i] : self.rule_to_data_loader_mapping[expression] for i, expression in enumerate( self.rule_to_data_loader_mapping) }
     
     def loss(self, rule_outputs):
