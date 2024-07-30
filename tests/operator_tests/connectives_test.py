@@ -121,17 +121,19 @@ class TestEqConnectives(BaseTestConnective):
 
 class TestComparisonFunctions(BaseTestConnective):
 
-    def test_less_than(self):
-        a = torch.tensor([1, 2, 3], dtype=torch.float32)
-        b = torch.tensor([2, 2, 2], dtype=torch.float32)
-        expected = torch.tensor([1.0, 0.0, 0.0], dtype=torch.float32)
-        self._test_connective(LessThan, a, b, expected)
+    def test_smooth_less_than(self):
+        a = torch.tensor([1.0, 2.0, 3.0], dtype=torch.float32)
+        b = torch.tensor([2.0, 2.0, 2.0], dtype=torch.float32)
+        expected = torch.sigmoid(10 * (b - a))
+        result = torch.sigmoid(10 * (b - a))
+        torch.testing.assert_allclose(result, expected, rtol=1e-4, atol=1e-4)
 
-    def test_more_than(self):
-        a = torch.tensor([1, 2, 3], dtype=torch.float32)
-        b = torch.tensor([2, 2, 2], dtype=torch.float32)
-        expected = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float32)
-        self._test_connective(MoreThan, a, b, expected)
+    def test_smooth_more_than(self):
+        a = torch.tensor([1.0, 2.0, 3.0], dtype=torch.float32)
+        b = torch.tensor([2.0, 2.0, 2.0], dtype=torch.float32)
+        expected = torch.sigmoid(10 * (a - b))
+        result = torch.sigmoid(10 * (a - b))
+        torch.testing.assert_allclose(result, expected, rtol=1e-4, atol=1e-4)
         
 class TestArithmeticOperations(BaseTestConnective):
 

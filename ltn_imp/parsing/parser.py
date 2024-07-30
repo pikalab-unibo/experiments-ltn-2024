@@ -16,14 +16,20 @@ from collections import defaultdict
 make_visitable(logic.Expression)
 
 class LessThan:
+    def __init__(self, k=10):
+        self.k = k
+
     def forward(self, tensor1, tensor2):
-        return torch.lt(tensor1, tensor2).float()
+        return torch.sigmoid(self.k * (tensor2 - tensor1))
 
     def __call__(self, tensor1, tensor2):
         return self.forward(tensor1, tensor2)
 class MoreThan:
+    def __init__(self, k=10):
+        self.k = k
+
     def forward(self, tensor1, tensor2):
-        return torch.gt(tensor1, tensor2).float()
+        return torch.sigmoid(self.k * (tensor1 - tensor2))
     
     def __call__(self, tensor1, tensor2):
         return self.forward(tensor1, tensor2)

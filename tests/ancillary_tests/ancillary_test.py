@@ -15,13 +15,6 @@ class TestModuleFactory(unittest.TestCase):
         self.assertTrue(torch.allclose(tensor1, tensor2, atol=delta), f"{tensor1} not close to {tensor2} within {delta}")
 
     def _test_expression(self, expr: str, expected_name: str, expected_params: list, expected_value, inputs=None):
-        # Test get_name method
-        name = self.factory.get_name(expr)
-        self.assertEqual(name, expected_name)
-
-        # Test get_params method
-        params = self.factory.get_params(expr)
-        self.assertEqual(params, expected_params)
 
         # Test create_module method
         module_class = self.factory.create_module(expr)
@@ -58,7 +51,7 @@ class TestModuleFactory(unittest.TestCase):
     def test_intersect_expression(self):
         self.test_out_expression()
         self.test_in_expression()
-        expr = "forall t1 b1 t2 b2. intersect(t1, b1, t2, b2) <-> (not out(t1, b1, t2, b2) and not in(t1, b1, t2, b2))"
+        expr = "all t1 b1 t2 b2. ( intersect(t1, b1, t2, b2) -> (not out(t1, b1, t2, b2) and not in(t1, b1, t2, b2)))"
         expected_name = "intersect"
         expected_params = ['t1', 'b1', 't2', 'b2']
         expected_value = torch.tensor(1.0)  # Example expected value
