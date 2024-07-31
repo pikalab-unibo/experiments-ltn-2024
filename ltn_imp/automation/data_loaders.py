@@ -2,10 +2,9 @@ from itertools import cycle
 
 
 class LoaderWrapper:
-    def __init__(self, variables, num_classes, target, loader):
+    def __init__(self, variables, targets, loader):
         self.variables = variables
-        self.num_classes = num_classes
-        self.target = target
+        self.targets = targets
         self.loader = loader 
 
     def __iter__(self):

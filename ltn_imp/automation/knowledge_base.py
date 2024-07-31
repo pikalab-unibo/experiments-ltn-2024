@@ -9,6 +9,7 @@ sat_agg_op = SatAgg()
 
 class KnowledgeBase:
     def __init__(self, learning_rules, ancillary_rules, rule_to_data_loader_mapping, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, lr = 0.001, constant_mapping = {}):
+
         self.learning_rules = learning_rules
         self.ancillary_rules = ancillary_rules
         self.predicates = predicates
@@ -17,10 +18,12 @@ class KnowledgeBase:
         self.quantifier_impls = quantifier_impls
         self.rule_to_data_loader_mapping = rule_to_data_loader_mapping
         self.constant_mapping = constant_mapping
-        self.declerations = {}
-        self.declerars = {}
+        self.declarations = {}
+        self.declarers = {}
+
         self.converter = LTNConverter(predicates=self.predicates, functions=self.functions, connective_impls=self.connective_impls, 
-                                      quantifier_impls=self.quantifier_impls, declerations =  self.declerations, declerars = self.declerars)
+                                      quantifier_impls=self.quantifier_impls, declarations =  self.declarations, declarers = self.declarers)
+        
         self.factory = ModuleFactory(converter=self.converter)
 
         for rule in self.ancillary_rules:
@@ -54,18 +57,21 @@ class KnowledgeBase:
         
         return params
     
-    def partition_data(self, var_mapping, batch, loader, num_classes, cls):
+    def partition_data(self, var_mapping, batch, loader):
 
-        *data, labels = batch 
+        # Take care of constants TODO: I dont think this needs to get repeated for every batch but for now its fine 
+        for k,v in self.constant_mapping.items(): 
+            var_mapping[k] = v
 
-        for i, var in enumerate( loader.variables ):
+        *batch, = batch 
 
-             # TODO: If the dataloader is sending more than one instance ( Classifier(x,y,z) ), they need to be unpacked correctly here
-            var_data = data[i] 
-            indices = (labels == cls).nonzero(as_tuple=True)[0]
-            var_mapping[var] = var_data[indices]
+        # Add Variables ( Input Data )
+        for i, var in enumerate(loader.variables):
+            var_mapping[var] = batch[i]
 
-        var_mapping[loader.target] = torch.eye(num_classes)[cls].unsqueeze(0) 
+        # Add Targets ( Output Data )
+        for i, target in enumerate(loader.targets):
+            var_mapping[target] = batch[i + len(loader.variables)]
 
     def optimize(self, num_epochs=10, log_steps=10):
 
@@ -74,29 +80,24 @@ class KnowledgeBase:
         combined_loader = CombinedDataLoader([loader for loader in all_loaders if loader is not None])
 
         for epoch in range(num_epochs):
-            for i in range(len(combined_loader)):
+            for _ in range(len(combined_loader)):
                 rule_outputs = []
                 current_batches = next(combined_loader)
 
                 for rule in self.rules:
                     loaders = self.rule_to_data_loader_mapping[rule]
-
-                    var_mapping = self.constant_mapping.copy()
+                    var_mapping = {}
                 
                     if loaders == None:
                         rule_outputs.append(rule(var_mapping))
-
-                    else:                    
-                        max_classes = max(loader.num_classes for loader in loaders)
+                        continue
                         
-                        for cls in range(max_classes):
-                            for loader in loaders:
-                                if cls < loader.num_classes: 
-                                    batch = current_batches[loader]
-                                    self.partition_data(var_mapping, batch, loader, loader.num_classes, cls)
-                            
-                            rule_output = rule(var_mapping)
-                            rule_outputs.append(rule_output)
+                    for loader in loaders:
+                        batch = current_batches[loader]
+                        self.partition_data(var_mapping, batch, loader)
+                    
+                    rule_output = rule(var_mapping)
+                    rule_outputs.append(rule_output)
                             
                 self.optimizer.zero_grad()
                 loss = self.loss(rule_outputs)
@@ -104,5 +105,7 @@ class KnowledgeBase:
                 self.optimizer.step()
 
             if epoch % log_steps == 0:
+                print([str(rule) for rule in self.rules])
+                print("Rule Outputs: ", rule_outputs)
                 print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
                 print()
