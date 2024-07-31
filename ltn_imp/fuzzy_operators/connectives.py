@@ -191,10 +191,42 @@ class EqConnective(BinaryConnective):
     def __init__(self, implementation):
         super().__init__(implementation)
 
-class DefaultEqConnective(EqConnective):
+class TanEqConnective(EqConnective):
     def __init__(self):
         super().__init__(self.implementation)
 
     def implementation(self, a, b):
-        # If 'a' and 'b' have the same shape, compare elementwise
-        return  1 - torch.tanh(torch.abs(a - b))**2
+        # Ensure a and b have the same shape and are at least 2D tensors
+        if a.ndim == 1:
+            a = a.unsqueeze(1)
+        if b.ndim == 1:
+            b = b.unsqueeze(1)
+
+        # Perform the operation
+        result = 1 - torch.tanh(torch.abs(a - b))**2
+        
+        return result
+    
+class SqrttEqConnective(EqConnective):
+    def __init__(self):
+        super().__init__(self.implementation)
+
+    def implementation(self, a, b):
+        # Ensure a and b have the same shape and are at least 2D tensors
+        if a.ndim == 0:
+            a = a.unsqueeze(0)
+        if b.ndim == 0:
+            b = b.unsqueeze(0)
+        if a.ndim == 1:
+            a = a.unsqueeze(1)
+        if b.ndim == 1:
+            b = b.unsqueeze(1)
+
+        # Perform the operation using the Euclidean distance formula
+        alpha = 0.05  # You can adjust the value of alpha as needed
+        result = torch.exp(-alpha * torch.sqrt(torch.sum(torch.square(a - b), dim=1)))
+        return result
+    
+DefaultEqConnective = TanEqConnective
+
+

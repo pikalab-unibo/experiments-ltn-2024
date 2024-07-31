@@ -8,7 +8,7 @@ sat_agg_op = SatAgg()
 
 
 class KnowledgeBase:
-    def __init__(self, learning_rules, ancillary_rules, rule_to_data_loader_mapping, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, lr = 0.001, constant_mapping = {}):
+    def __init__(self, learning_rules, ancillary_rules, rule_to_data_loader_mapping, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, constant_mapping = {}):
 
         self.learning_rules = learning_rules
         self.ancillary_rules = ancillary_rules
@@ -30,11 +30,6 @@ class KnowledgeBase:
             self.factory.create_module(rule)
 
         self.set_rules()
-
-        try:
-            self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        except:
-            print("No parameters to optimize")
 
     def set_rules(self):
         self.rules = [ self.converter(rule) for rule in self.learning_rules ]
@@ -73,7 +68,12 @@ class KnowledgeBase:
         for i, target in enumerate(loader.targets):
             var_mapping[target] = batch[i + len(loader.variables)]
 
-    def optimize(self, num_epochs=10, log_steps=10):
+    def optimize(self, num_epochs=10, log_steps=10, lr=0.001):
+
+        try:
+            self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        except:
+            print("No parameters to optimize")
 
         all_loaders = set(loader for loaders in self.rule_to_data_loader_mapping.values() if loaders is not None for loader in loaders if loader is not None)
 
