@@ -207,7 +207,7 @@ class TanEqConnective(EqConnective):
         
         return result
     
-class SqrttEqConnective(EqConnective):
+class SqrtEqConnective(EqConnective):
     def __init__(self):
         super().__init__(self.implementation)
 
