@@ -9,13 +9,14 @@ class ModuleFactory:
         self.converter = converter
 
     def get_name(self, expression):
-        expression = Expression.fromstring(transform(expression))
+        expression = transform(expression)
+        expression = Expression.fromstring(expression)
+        
+        while hasattr(expression, 'term'):
+            expression = expression.term
 
         if hasattr(expression, 'first'):
             expression = expression.first
-
-        while hasattr(expression, 'term'):
-            expression = expression.term
             
         while hasattr(expression, 'function'):
             expression = expression.function
@@ -24,18 +25,26 @@ class ModuleFactory:
 
     def get_params(self, expression):
 
-        expression = Expression.fromstring(transform(expression))
-
-        if hasattr(expression, 'first'):
-            expression = expression.first
+        expression = transform(expression)
+        expression = Expression.fromstring(expression)
 
         while hasattr(expression, 'term'):
             expression = expression.term
         
+        if hasattr(expression, 'first'):
+            expression = expression.first
+        
         return [str(arg) for arg in expression.args]
     
     def get_functionality(self, expression):
-        return self.converter( str( Expression.fromstring( transform(expression) ).second ), process = False) 
+
+        expression = transform(expression)
+        expression = Expression.fromstring(expression)
+
+        while hasattr(expression, 'term'):
+            expression = expression.term
+
+        return self.converter(str(expression.second), process=False) 
 
     def create_module(self, expression):
 

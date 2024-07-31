@@ -130,9 +130,17 @@ def transform_expression(expression_str):
 
 def transform(expression):
     operators = {"+", "-", "*", "/", "<", "<=", ">", ">="}
+    
+    if expression.startswith("all") or expression.startswith("exist"):
+        parts = expression.split('.', 1)
+        quantifier = parts[0]
+        rest = parts[1]
+    else:
+        quantifier = ""
+        rest = expression
 
-    before = expression
-    after = transform_expression(expression)
+    before = rest
+    after = transform_expression(rest)
     
     while before != after:
         if any(op in after for op in operators):
@@ -140,4 +148,7 @@ def transform(expression):
         else:
             break
 
-    return after
+    if quantifier:
+        return f"{quantifier}. ({after})"
+    else:
+        return after

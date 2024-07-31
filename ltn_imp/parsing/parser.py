@@ -24,6 +24,7 @@ class LessThan:
 
     def __call__(self, tensor1, tensor2):
         return self.forward(tensor1, tensor2)
+    
 class MoreThan:
     def __init__(self, k=10):
         self.k = k
@@ -325,7 +326,8 @@ class LTNConverter:
 
     def __call__(self, expression, process=True):
         if process:
-            expression = Expression.fromstring(transform(expression))
+            expression = transform(expression)
+            expression = Expression.fromstring(expression)
         else: 
             expression = Expression.fromstring(expression)
                                                
