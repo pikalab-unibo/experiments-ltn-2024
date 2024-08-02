@@ -131,7 +131,7 @@ def transform_expression(expression_str):
 def transform(expression):
     operators = {"+", "-", "*", "/", "<", "<=", ">", ">="}
     
-    if expression.startswith("all") or expression.startswith("exist"):
+    if expression.startswith("all") or expression.startswith("exist") or expression.startswith("forall"):
         parts = expression.split('.', 1)
         quantifier = parts[0]
         rest = parts[1]

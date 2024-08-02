@@ -175,6 +175,8 @@ class ExpressionVisitor(Visitor):
                 value = results[i]
                 self.declarations[str(var)] = value
                 self.declarers[str(var)] = str(expression)
+                
+            self.intermediate_results[functor].append(torch.tensor([1.0], requires_grad=True))
             return torch.tensor([1.0], requires_grad=True)
 
         # Ensuring results is a tensor

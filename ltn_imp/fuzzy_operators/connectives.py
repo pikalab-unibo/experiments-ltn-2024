@@ -191,7 +191,7 @@ class EqConnective(BinaryConnective):
     def __init__(self, implementation):
         super().__init__(implementation)
 
-class TanEqConnective(EqConnective):
+class TanEqConnective(EqConnective): # This returns a tensor of the form [ [0], [1], [0], [1], [0], [1], ... ]
     def __init__(self):
         super().__init__(self.implementation)
 
@@ -203,11 +203,10 @@ class TanEqConnective(EqConnective):
             b = b.unsqueeze(1)
 
         # Perform the operation
-        result = 1 - torch.tanh(torch.abs(a - b))**2
+        result = 1 - torch.tanh(torch.abs(torch.sub(a,b)))**2
         
         return result
-    
-class SqrtEqConnective(EqConnective):
+class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0, 1, 0, 1, 0, 1, ...]
     def __init__(self):
         super().__init__(self.implementation)
 

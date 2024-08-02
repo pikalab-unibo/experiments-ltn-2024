@@ -1,4 +1,3 @@
-import numpy as np
 from PIL import Image, ImageDraw
 import random
 import os
@@ -39,15 +38,15 @@ def determine_relationship(circle_center, circle_radius, rect_tl, rect_br):
     # Check inside
     if (circle_tl[0] >= rect_tl[0] and circle_tl[1] >= rect_tl[1] and
         circle_br[0] <= rect_br[0] and circle_br[1] <= rect_br[1]):
-        return [1, 0, 0]
+        return 0
     
     # Check outside
     if (circle_br[0] < rect_tl[0] or circle_br[1] < rect_tl[1] or
         circle_tl[0] > rect_br[0] or circle_tl[1] > rect_br[1]):
-        return [0, 0, 1]
+        return 2
     
     # Otherwise, it's overlapping
-    return [0, 1, 0]
+    return 1
 
 # Generate dataset
 def generate_dataset(num_images, output_dir='datasets/shape_dataset'):
