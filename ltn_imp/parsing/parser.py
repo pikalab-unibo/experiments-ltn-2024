@@ -1,66 +1,97 @@
 from nltk.sem import logic
 import nltk.sem.logic
-from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective, EqConnective
+from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective, EqConnective, AddConnective, SubtractConnective, MultiplyConnective, DivideConnective, LessThanConnective, MoreThanConnective, LessThanOrEqualConnective, MoreThanOrEqualConnective
 from ltn_imp.fuzzy_operators.predicates import Predicate
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
 from ltn_imp.fuzzy_operators.functions import Function
 from ltn_imp.visitor import Visitor, make_visitable
-from nltk.sem.logic import Expression
 import ltn_imp.fuzzy_operators.connectives as Connectives
-from ltn_imp.parsing.expression_transformations import transform
 import torch
 import nltk
 from torchviz import make_dot
 from collections import defaultdict
+from nltk.sem.logic import LogicParser
+import nltk.sem.logic as nl
 
-make_visitable(logic.Expression)
+make_visitable(logic.Expression)    
 
-class LessThan:
-    def __init__(self, k=10):
-        self.k = k
 
-    def forward(self, tensor1, tensor2):
-        return torch.sigmoid(self.k * (tensor2 - tensor1))
+ARITH_OPS = ["+", "-", "*", "/"]
+COMP_OPS = [">", "<", "<=", ">="]
 
-    def __call__(self, tensor1, tensor2):
-        return self.forward(tensor1, tensor2)
-    
-class MoreThan:
-    def __init__(self, k=10):
-        self.k = k
+# Extend the token lists
+nl.Tokens.AND_LIST += ARITH_OPS + COMP_OPS
 
-    def forward(self, tensor1, tensor2):
-        return torch.sigmoid(self.k * (tensor1 - tensor2))
+class ArithExpression(nl.BinaryExpression):
+    def __init__(self, op, first, second):
+        super().__init__(first, second)
+        self.op = op
+
+    def getOp(self):
+        return self.op
     
-    def __call__(self, tensor1, tensor2):
-        return self.forward(tensor1, tensor2)
+    @classmethod
+    def factory_for(cls, op):
+        def factory(first, second):
+            return cls(first, second)
+        return factory
     
-class Add:
-    def forward(self, tensor1, tensor2):
-        return torch.add(tensor1, tensor2).float()
+class AdditionExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('+', first, second)
+
+class SubtractionExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('-', first, second)
+
+class MultiplicationExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('*', first, second)
+
+class DivisionExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('/', first, second)
+
+class MoreThanExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('>', first, second)
+
+class LessThanExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('<', first, second)
+
+class LessEqualExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('<=', first, second)
+
+class MoreEqualExpression(ArithExpression):
+    def __init__(self, first, second):
+        super().__init__('>=', first, second)
+
+class LogicParser(nl.LogicParser):
+    def get_BooleanExpression_factory(self, tok):
+        if tok == '+':
+            return AdditionExpression.factory_for('+')
+        elif tok == '-':
+            return SubtractionExpression.factory_for('-')
+        elif tok == '*':
+            return MultiplicationExpression.factory_for('*')
+        elif tok == '/':
+            return DivisionExpression.factory_for('/')
+        elif tok == '>':
+            return MoreThanExpression.factory_for('>')
+        elif tok == '<':
+            return LessThanExpression.factory_for('<')
+        elif tok == '<=':
+            return LessEqualExpression.factory_for('<=')
+        elif tok == '>=':
+            return MoreEqualExpression.factory_for('>=')
+        return super().get_BooleanExpression_factory(tok)
     
-    def __call__(self, tensor1, tensor2):
-        return self.forward(tensor1, tensor2)
-    
-class Subtract:
-    def forward(self, tensor1, tensor2):
-        return torch.sub(tensor1, tensor2).float()
-    
-    def __call__(self, tensor1, tensor2):
-        return self.forward(tensor1, tensor2)
-class Multiply:
-    def forward(self, tensor1, tensor2):
-        return torch.mul(tensor1, tensor2).float()
-    
-    def __call__(self, tensor1, tensor2):
-        return self.forward(tensor1, tensor2)
-class Divide:
-    def forward(self, tensor1, tensor2):
-        return torch.div(tensor1, tensor2).float()
-    
-    def __call__(self, tensor1, tensor2):
-        return self.forward(tensor1, tensor2)
-    
+    def parse(self, data, signature=None):
+        return super().parse(data, signature)
+
+
 def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
     prefix = prefix.lower()
     for k in dir(module):
@@ -121,13 +152,31 @@ class ExpressionVisitor(Visitor):
         Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
         Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'min'))
 
+        Add = get_subclass_with_prefix(module=Connectives, superclass=AddConnective, prefix=functions.get('add', 'default'))
+        Subtract = get_subclass_with_prefix(module=Connectives, superclass=SubtractConnective, prefix=functions.get('sub', 'default'))
+        Multiply = get_subclass_with_prefix(module=Connectives, superclass=MultiplyConnective, prefix=functions.get('mul', 'default'))
+        Divide = get_subclass_with_prefix(module=Connectives, superclass=DivideConnective, prefix=functions.get('div', 'default'))
+
+        LessThan = get_subclass_with_prefix(module=Connectives, superclass=LessThanConnective, prefix=predicates.get('lt', 'default'))
+        MoreThan = get_subclass_with_prefix(module=Connectives, superclass=MoreThanConnective, prefix=predicates.get('gt', 'default'))
+        LessThanEqual = get_subclass_with_prefix(module=Connectives, superclass=LessThanOrEqualConnective, prefix=predicates.get('le', 'default'))
+        MoreThanEqual = get_subclass_with_prefix(module=Connectives, superclass=MoreThanOrEqualConnective, prefix=predicates.get('ge', 'default'))
+        
         self.connective_map = {
             logic.AndExpression: And,
             logic.OrExpression: Or,
             logic.ImpExpression: Implies,
             logic.IffExpression: Equiv,
             logic.NegatedExpression: Not,
-            logic.EqualityExpression: Eq
+            logic.EqualityExpression: Eq,
+            AdditionExpression: Add,
+            SubtractionExpression: Subtract,
+            MultiplicationExpression: Multiply,
+            DivisionExpression: Divide,
+            LessThanExpression: LessThan,
+            MoreThanExpression: MoreThan,
+            LessEqualExpression: LessThanEqual,
+            MoreEqualExpression: MoreThanEqual
         }
 
         self.quantifier_map = {
@@ -308,6 +357,7 @@ class ExpressionVisitor(Visitor):
     def visit_ConstantExpression(self, expression):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_constant(variable_mapping, expression), self)
 
+
 class LTNConverter:
     def __init__(self, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
         self.predicates = predicates
@@ -318,21 +368,17 @@ class LTNConverter:
         self.declarers = declarers
         self.expression = None
 
-        # Adding default functions
-        self.functions["lt"] = LessThan()
-        self.functions["mt"] = MoreThan()
-        self.functions["add"] = Add()
-        self.functions["sub"] = Subtract()
-        self.functions["mul"] = Multiply()
-        self.functions["div"] = Divide()
+    def parse(self, expression):
+        parser = LogicParser()
+        expression = parser.parse(expression)
+        self.expression = expression
+        return expression
+        
+    def __call__(self, expression):
 
-    def __call__(self, expression, process=True):
-        if process:
-            expression = transform(expression)
-            expression = Expression.fromstring(expression)
-        else: 
-            expression = Expression.fromstring(expression)
-                                               
+        parser = LogicParser()
+        expression = parser.parse(expression)
+    
         self.expression = expression
         visitor = ExpressionVisitor(
             self.predicates, 
@@ -342,4 +388,5 @@ class LTNConverter:
             declarations=self.declarations, 
             declarers=self.declarers
         )
+
         return ConvertedExpression(self.expression, expression.accept(visitor), visitor)

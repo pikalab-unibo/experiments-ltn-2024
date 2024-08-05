@@ -228,4 +228,108 @@ class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0,
     
 DefaultEqConnective = TanEqConnective
 
+# LessThan Connective
+class LessThanConnective(BinaryConnective):
+    def __init__(self, k=10):
+        self.k = k
+        super().__init__(self.implementation)
 
+    def implementation(self, tensor1, tensor2):
+        return torch.sigmoid(self.k * (tensor2 - tensor1))
+
+class DefaultLessThanConnective(LessThanConnective):
+    def __init__(self):
+        super().__init__()
+
+# MoreThan Connective
+class MoreThanConnective(BinaryConnective):
+    def __init__(self, k=10):
+        self.k = k
+        super().__init__(self.implementation)
+
+    def implementation(self, tensor1, tensor2):
+        return torch.sigmoid(self.k * (tensor1 - tensor2))
+
+class DefaultMoreThanConnective(MoreThanConnective):
+    def __init__(self):
+        super().__init__()
+
+# Add Connective
+class AddConnective(BinaryConnective):
+    def __init__(self):
+        super().__init__(self.implementation)
+
+    def implementation(self, tensor1, tensor2):
+        return torch.add(tensor1, tensor2).float()
+
+class DefaultAddConnective(AddConnective):
+    def __init__(self):
+        super().__init__()
+
+# Subtract Connective
+class SubtractConnective(BinaryConnective):
+    def __init__(self):
+        super().__init__(self.implementation)
+
+    def implementation(self, tensor1, tensor2):
+        return torch.sub(tensor1, tensor2).float()
+
+class DefaultSubtractConnective(SubtractConnective):
+    def __init__(self):
+        super().__init__()
+
+# Multiply Connective
+class MultiplyConnective(BinaryConnective):
+    def __init__(self):
+        super().__init__(self.implementation)
+
+    def implementation(self, tensor1, tensor2):
+        return torch.mul(tensor1, tensor2).float()
+
+class DefaultMultiplyConnective(MultiplyConnective):
+    def __init__(self):
+        super().__init__()
+
+# Divide Connective
+class DivideConnective(BinaryConnective):
+    def __init__(self):
+        super().__init__(self.implementation)
+
+    def implementation(self, tensor1, tensor2):
+        return torch.div(tensor1, tensor2).float()
+
+class DefaultDivideConnective(DivideConnective):
+    def __init__(self):
+        super().__init__()
+
+
+class LessThanOrEqualConnective(BinaryConnective):
+    def __init__(self, k=10):
+        self.k = k
+        super().__init__(self.implementation)
+
+    def implementation(self, tensor1, tensor2):
+        return DefaultOrConnective()(
+            DefaultLessThanConnective(self.k)(tensor1, tensor2),
+            DefaultEqConnective()(tensor1, tensor2)
+        )
+
+class DefaultLessThanOrEqualConnective(LessThanOrEqualConnective):
+    def __init__(self):
+        super().__init__()
+
+# MoreThanOrEqual Connective
+class MoreThanOrEqualConnective(BinaryConnective):
+    def __init__(self, k=10):
+        self.k = k
+        super().__init__(self.implementation)
+
+    def implementation(self, tensor1, tensor2):
+        return DefaultOrConnective()(
+            DefaultLessThanConnective(self.k)(tensor2, tensor1),
+            DefaultEqConnective()(tensor1, tensor2)
+        )
+
+class DefaultMoreThanOrEqualConnective(MoreThanOrEqualConnective):
+    def __init__(self):
+        super().__init__()

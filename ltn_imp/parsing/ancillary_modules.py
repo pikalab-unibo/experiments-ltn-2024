@@ -1,5 +1,3 @@
-from ltn_imp.parsing.expression_transformations import transform
-from nltk.sem.logic import Expression
 import torch.nn as nn
 import inspect
 
@@ -9,8 +7,7 @@ class ModuleFactory:
         self.converter = converter
 
     def get_name(self, expression):
-        expression = transform(expression)
-        expression = Expression.fromstring(expression)
+        expression = self.converter.parse(expression)
         
         while hasattr(expression, 'term'):
             expression = expression.term
@@ -25,8 +22,7 @@ class ModuleFactory:
 
     def get_params(self, expression):
 
-        expression = transform(expression)
-        expression = Expression.fromstring(expression)
+        expression = self.converter.parse(expression)
 
         while hasattr(expression, 'term'):
             expression = expression.term
@@ -38,13 +34,12 @@ class ModuleFactory:
     
     def get_functionality(self, expression):
 
-        expression = transform(expression)
-        expression = Expression.fromstring(expression)
+        expression = self.converter.parse(expression)
 
         while hasattr(expression, 'term'):
             expression = expression.term
 
-        return self.converter(str(expression.second), process=False) 
+        return self.converter(str(expression.second)) 
 
     def create_module(self, expression):
 

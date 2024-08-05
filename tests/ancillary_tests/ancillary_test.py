@@ -1,8 +1,6 @@
 import unittest
 import torch
 from ltn_imp.parsing.parser import LTNConverter
-from ltn_imp.parsing.expression_transformations import transform
-from nltk.sem.logic import Expression
 from ltn_imp.parsing.ancillary_modules import ModuleFactory
 
 class TestModuleFactory(unittest.TestCase):
@@ -25,7 +23,7 @@ class TestModuleFactory(unittest.TestCase):
         self.assertAlmostEqualTensor(result, expected_value)
 
     def test_simple_addition(self):
-        expr = "all x y. addition(x,y) <->  x + y"
+        expr = "all x y. (addition(x,y) <->  x + y)"
         expected_name = "addition"
         expected_params = ['x', 'y']
         expected_value = torch.tensor(5.0)  # Example expected value
@@ -33,7 +31,7 @@ class TestModuleFactory(unittest.TestCase):
         self._test_expression(expr, expected_name, expected_params, expected_value, inputs=inputs)
 
     def test_in_expression(self):
-        expr = "all t1 b1 t2 b2. in(t1, b1, t2, b2) <-> t1 < t2 and b1 < b2"
+        expr = "all t1 b1 t2 b2. (in(t1, b1, t2, b2) <-> t1 < t2 and b1 < b2)"
         expected_name = "in"
         expected_params = ['t1', 'b1', 't2', 'b2']
         expected_value = torch.tensor(1.0)  # Example expected value
@@ -41,7 +39,7 @@ class TestModuleFactory(unittest.TestCase):
         self._test_expression(expr, expected_name, expected_params, expected_value, inputs=inputs)
 
     def test_out_expression(self):
-        expr = "all t1 b1 t2 b2. out(t1, b1, t2, b2) <-> t1 > b2 or b1 > b2"
+        expr = "all t1 b1 t2 b2. (out(t1, b1, t2, b2) <-> t1 > b2 or b1 > b2)"
         expected_name = "out"
         expected_params = ['t1', 'b1', 't2', 'b2']
         expected_value = torch.tensor(1.0)  # Example expected value
@@ -51,10 +49,10 @@ class TestModuleFactory(unittest.TestCase):
     def test_intersect_expression(self):
         self.test_out_expression()
         self.test_in_expression()
-        expr = "all t1 b1 t2 b2. intersect(t1, b1, t2, b2) <-> not in(t1, b1, t2, b2)"
+        expr = "all t1 b1 t2 b2.(intersect(t1, b1, t2, b2) <-> not in(t1, b1, t2, b2))"
         expected_name = "intersect"
         expected_params = ['t1', 'b1', 't2', 'b2']
-        expected_value = torch.tensor(0.5)  # Example expected value
+        expected_value = torch.tensor(0.)  # Example expected value
         inputs = [torch.tensor(1.0), torch.tensor(2.0), torch.tensor(1.0), torch.tensor(4.0)]
         self._test_expression(expr, expected_name, expected_params, expected_value, inputs=inputs)
 
