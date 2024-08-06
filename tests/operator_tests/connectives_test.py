@@ -5,10 +5,10 @@ from ltn_imp.fuzzy_operators.connectives import (
     MaxOrConnective, ProbSumOrConnective, LukOrConnective, 
     StandardNotConnective, GodelNotConnective, 
     KleeneDienesImpliesConnective, GodelImpliesConnective, ReichenbachImpliesConnective, GoguenImpliesConnective, LukImpliesConnective, 
-    DefaultIffConnective, DefaultEqConnective
+    DefaultIffConnective, DefaultEqConnective, DefaultAddConnective, DefaultSubtractConnective, DefaultMultiplyConnective, DefaultDivideConnective
 )
-from ltn_imp.parsing.parser import LessThan, MoreThan, Add, Subtract, Multiply, Divide
 
+Add, Subtract, Multiply, Divide = DefaultAddConnective, DefaultSubtractConnective, DefaultMultiplyConnective, DefaultDivideConnective
 class BaseTestConnective(unittest.TestCase):
 
     def _test_connective(self, connective_cls, a, b=None, expected=None):
