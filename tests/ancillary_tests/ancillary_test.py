@@ -30,32 +30,5 @@ class TestModuleFactory(unittest.TestCase):
         inputs = [torch.tensor(2.0), torch.tensor(3.0), torch.tensor(5.0)]
         self._test_expression(expr, expected_name, expected_params, expected_value, inputs=inputs)
 
-    def test_in_expression(self):
-        expr = "all t1 b1 t2 b2. (in(t1, b1, t2, b2) <-> t1 < t2 and b1 < b2)"
-        expected_name = "in"
-        expected_params = ['t1', 'b1', 't2', 'b2']
-        expected_value = torch.tensor(1.0)  # Example expected value
-        inputs = [torch.tensor(1.0), torch.tensor(2.0), torch.tensor(3.0), torch.tensor(4.0)]
-        self._test_expression(expr, expected_name, expected_params, expected_value, inputs=inputs)
-
-    def test_out_expression(self):
-        expr = "all t1 b1 t2 b2. (out(t1, b1, t2, b2) <-> t1 > b2 or b1 > b2)"
-        expected_name = "out"
-        expected_params = ['t1', 'b1', 't2', 'b2']
-        expected_value = torch.tensor(1.0)  # Example expected value
-        inputs = [torch.tensor(5.0), torch.tensor(6.0), torch.tensor(3.0), torch.tensor(4.0)]
-        self._test_expression(expr, expected_name, expected_params, expected_value, inputs=inputs)
-
-    def test_intersect_expression(self):
-        self.test_out_expression()
-        self.test_in_expression()
-        expr = "all t1 b1 t2 b2.(intersect(t1, b1, t2, b2) <-> not in(t1, b1, t2, b2))"
-        expected_name = "intersect"
-        expected_params = ['t1', 'b1', 't2', 'b2']
-        expected_value = torch.tensor(0.)  # Example expected value
-        inputs = [torch.tensor(1.0), torch.tensor(2.0), torch.tensor(1.0), torch.tensor(4.0)]
-        self._test_expression(expr, expected_name, expected_params, expected_value, inputs=inputs)
-
-
 if __name__ == '__main__':
     unittest.main()

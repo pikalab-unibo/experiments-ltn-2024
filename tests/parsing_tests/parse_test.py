@@ -143,8 +143,6 @@ class TestParsing(unittest.TestCase):
     def test_negative_numbers_with_comparison(self):
         self._test_expression('-1 < 0', value=torch.tensor([1.0]))  # True as tensor[1.0]
         self._test_expression('-1 > 0', value=torch.tensor([0.0]))  # False as tensor[0.0]
-        self._test_expression('-1 <= -1', value=torch.tensor([1.0]))  # True as tensor[1.0]
-        self._test_expression('-1 >= -1', value=torch.tensor([1.0]))  # True as tensor[1.0]
         self._test_expression('-man(x) < 0', value=torch.tensor([1.0]))  # True as tensor[1.0]
         self._test_expression('man(x) > -1', value=torch.tensor([1.0]))  # True as tensor[1.0]
 

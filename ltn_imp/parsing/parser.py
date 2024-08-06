@@ -1,6 +1,6 @@
 from nltk.sem import logic
 import nltk.sem.logic
-from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective, EqConnective, AddConnective, SubtractConnective, MultiplyConnective, DivideConnective, LessThanConnective, MoreThanConnective, LessThanOrEqualConnective, MoreThanOrEqualConnective
+from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective, EqConnective, AddConnective, SubtractConnective, MultiplyConnective, DivideConnective, LessThanConnective, MoreThanConnective, LessThanOrEqualConnective, MoreThanOrEqualConnective, NegativeConnective
 from ltn_imp.fuzzy_operators.predicates import Predicate
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
 from ltn_imp.fuzzy_operators.functions import Function
@@ -16,11 +16,14 @@ import nltk.sem.logic as nl
 make_visitable(logic.Expression)    
 
 
-ARITH_OPS = ["+", "-", "*", "/"]
-COMP_OPS = [">", "<", "<=", ">="]
+ARITH_OPS_LOW_PRESEDENCE = ["+", "-"]
+ARITH_OPS_HIGH_PRESEDENCE = ["*", "/"]
+EQUALITY_COMP_OPS = ["<=", ">="]
+COMP_OPS = ["<", ">"]
 
-# Extend the token lists
-nl.Tokens.AND_LIST += ARITH_OPS + COMP_OPS
+nl.Tokens.OR_LIST += ARITH_OPS_LOW_PRESEDENCE 
+nl.Tokens.AND_LIST += ARITH_OPS_HIGH_PRESEDENCE
+nl.Tokens.EQ_LIST += EQUALITY_COMP_OPS + COMP_OPS
 
 class ArithExpression(nl.BinaryExpression):
     def __init__(self, op, first, second):
@@ -34,7 +37,7 @@ class ArithExpression(nl.BinaryExpression):
     def factory_for(cls, op):
         def factory(first, second):
             return cls(first, second)
-        return factory
+        return factory 
     
 class AdditionExpression(ArithExpression):
     def __init__(self, first, second):
@@ -68,7 +71,65 @@ class MoreEqualExpression(ArithExpression):
     def __init__(self, first, second):
         super().__init__('>=', first, second)
 
+class NegativeExpression(nl.NegatedExpression):
+    def __init__(self, term):
+        assert isinstance(term, nl.Expression), f"{term} is not an Expression"
+        self.term = term
+
+    @property
+    def type(self):
+        return self.term.type
+
+    def _set_type(self, other_type=nl.ANY_TYPE, signature=None):
+        self.term._set_type(other_type, signature)
+
+    def findtype(self, variable):
+        return self.term.findtype(variable)
+
+    def visit(self, function, combinator):
+        return combinator([function(self.term)])
+
+    def __eq__(self, other):
+        return isinstance(other, NegativeExpression) and self.term == other.term
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(self.term)
+
+    def __str__(self):
+        return f"-{self.term}"
+
+
+class LessEqualExpression(nl.BinaryExpression):
+    def getOp(self):
+        return "<="
+
+class MoreEqualExpression(nl.BinaryExpression):
+    def getOp(self):
+        return ">="
+    
+
 class LogicParser(nl.LogicParser):
+
+    def __init__(self, type_check=False):
+        super().__init__(type_check)
+
+        self.operator_precedence = dict(
+            [(x, 1) for x in nl.Tokens.LAMBDA_LIST] +                # Lambda (λ)
+            [(nl.APP, 2)] +                                             # Application (APP)
+            [(x, 3) for x in nl.Tokens.NOT_LIST] +                   # Negation (-)
+            [(x, 5) for x in nl.Tokens.AND_LIST] +                   # Conjunction (and, &)
+            [(x, 6) for x in nl.Tokens.OR_LIST] +                   # Disjunction (or, |)
+            [(x, 7) for x in nl.Tokens.IMP_LIST] +                  # Implication (implies, ->)
+            [(x, 8) for x in nl.Tokens.IFF_LIST] +                  # Biconditional (iff, <->)
+            [(x, 9) for x in nl.Tokens.EQ_LIST + nl.Tokens.NEQ_LIST] +  # Equality (=) and Inequality (!=)
+            [(x, 10) for x in nl.Tokens.QUANTS] +                     # Quantifiers (some, all, iota)
+            [(None, 11)]                                             # Default (None)
+        )
+        self.right_associated_operations = [nl.APP]
+
     def get_BooleanExpression_factory(self, tok):
         if tok == '+':
             return AdditionExpression.factory_for('+')
@@ -82,15 +143,89 @@ class LogicParser(nl.LogicParser):
             return MoreThanExpression.factory_for('>')
         elif tok == '<':
             return LessThanExpression.factory_for('<')
-        elif tok == '<=':
-            return LessEqualExpression.factory_for('<=')
-        elif tok == '>=':
-            return MoreEqualExpression.factory_for('>=')
+                
         return super().get_BooleanExpression_factory(tok)
+    
+    def handle_negation(self, tok, context):
+        if tok == '-':
+            if self.inRange(0):
+                if self.token(0).isdigit():
+                    term = self.token()
+                    return NegativeExpression(nl.ConstantExpression(nl.Variable(term)))
+                elif self.token(0) == nl.Tokens.OPEN:
+                    self.token()  # Consume the '('
+                    term = self.process_next_expression(None)
+                    self.assertNextToken(nl.Tokens.CLOSE)  # Ensure there's a closing ')'
+                    return NegativeExpression(term)
+                else:
+                    term = self.process_next_expression(tok)
+                    print(term)
+                    return NegativeExpression(term)
+        return super().handle_negation(tok, context)
+    
+
+    def attempt_EqualityExpression(self, expression, context):
+        if self.inRange(0):
+            tok = self.token(0)
+            
+            if tok in nl.Tokens.EQ_LIST + nl.Tokens.NEQ_LIST  and self.has_priority(tok, context):
+                if tok == "=":
+                    self.token()
+                    expression = self.make_EqualityExpression(expression, self.process_next_expression(tok))
+
+                elif tok == "!=":
+                    self.token()
+                    expression = self.make_EqualityExpression(expression, self.process_next_expression(tok))
+                    expression = self.make_NegatedExpression(expression)
+
+                elif tok == "<":
+                    tok = self.token(1)
+
+                    if tok == "=":
+                        self.token()
+                        self.token()
+                        return LessEqualExpression(expression, self.process_next_expression(tok))
+                    
+                    else:
+                        if tok == nl.Tokens.OPEN:
+                            self.token()
+                            return LessThanExpression(expression, self.process_next_expression(None))
+                        
+                        elif tok == "-":
+                            self.token()
+                            return LessThanExpression(expression, self.process_next_expression(None))
+                        
+                        else:
+                            tok = self.token(0)
+                            self.process_next_expression(tok)
+                            return LessThanExpression(expression, self.process_next_expression(tok))
+                    
+                elif tok == ">":
+                    tok = self.token(1)
+
+                    if tok == "=":
+                        self.token()
+                        self.token()
+                        return MoreEqualExpression(expression, self.process_next_expression(tok))
+                    
+                    else:
+                        if tok == nl.Tokens.OPEN:
+                            self.token()
+                            return MoreThanExpression(expression, self.process_next_expression(None))
+                        
+                        elif tok == "-":
+                            self.token()
+                            return MoreThanExpression(expression, self.process_next_expression(None))
+                        
+                        else:
+                            tok = self.token(0)
+                            self.process_next_expression(tok)
+                            return MoreThanExpression(expression, self.process_next_expression(tok))
+                    
+        return expression
     
     def parse(self, data, signature=None):
         return super().parse(data, signature)
-
 
 def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
     prefix = prefix.lower()
@@ -111,8 +246,7 @@ class ConvertedExpression:
         try:
             return self.converted(*args, **kwargs)
         except Exception as e:
-            print(e)
-            print(self.expression)
+            print(f"For Expression {self.expression} this error occured: {e}")
             raise e
         
     def __str__(self):
@@ -161,6 +295,8 @@ class ExpressionVisitor(Visitor):
         MoreThan = get_subclass_with_prefix(module=Connectives, superclass=MoreThanConnective, prefix=predicates.get('gt', 'default'))
         LessThanEqual = get_subclass_with_prefix(module=Connectives, superclass=LessThanOrEqualConnective, prefix=predicates.get('le', 'default'))
         MoreThanEqual = get_subclass_with_prefix(module=Connectives, superclass=MoreThanOrEqualConnective, prefix=predicates.get('ge', 'default'))
+
+        Negative = get_subclass_with_prefix(module=Connectives, superclass=NegativeConnective, prefix=connective_impls.get('neg', 'default'))
         
         self.connective_map = {
             logic.AndExpression: And,
@@ -168,6 +304,7 @@ class ExpressionVisitor(Visitor):
             logic.ImpExpression: Implies,
             logic.IffExpression: Equiv,
             logic.NegatedExpression: Not,
+            NegativeExpression: Negative,
             logic.EqualityExpression: Eq,
             AdditionExpression: Add,
             SubtractionExpression: Subtract,

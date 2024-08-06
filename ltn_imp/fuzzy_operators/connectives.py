@@ -165,6 +165,8 @@ class DefaultIffConnective(IffConnective):
     def implementation(self, a, b):
         return 1 - torch.abs(a - b)
 
+
+
 # Not Connective and its subclasses
 class NotConnective(UnaryConnective):
     def __init__(self, implementation):
@@ -186,6 +188,17 @@ class GodelNotConnective(NotConnective):
 
 class DefaultNotConnective(StandardNotConnective):
     pass
+
+class NegativeConnective(UnaryConnective):
+    def __init__(self, implementation):
+        super().__init__(implementation)
+
+class DefaultNegativeConnective(NegativeConnective):
+    def __init__(self):
+        super().__init__(self.implementation)
+
+    def implementation(self, a):
+        return torch.sub(0,a)
 
 class EqConnective(BinaryConnective):
     def __init__(self, implementation):
@@ -238,8 +251,7 @@ class LessThanConnective(BinaryConnective):
         return torch.sigmoid(self.k * (tensor2 - tensor1))
 
 class DefaultLessThanConnective(LessThanConnective):
-    def __init__(self):
-        super().__init__()
+    pass
 
 # MoreThan Connective
 class MoreThanConnective(BinaryConnective):
@@ -251,8 +263,7 @@ class MoreThanConnective(BinaryConnective):
         return torch.sigmoid(self.k * (tensor1 - tensor2))
 
 class DefaultMoreThanConnective(MoreThanConnective):
-    def __init__(self):
-        super().__init__()
+ pass
 
 # Add Connective
 class AddConnective(BinaryConnective):
@@ -263,8 +274,7 @@ class AddConnective(BinaryConnective):
         return torch.add(tensor1, tensor2).float()
 
 class DefaultAddConnective(AddConnective):
-    def __init__(self):
-        super().__init__()
+ pass
 
 # Subtract Connective
 class SubtractConnective(BinaryConnective):
@@ -275,8 +285,7 @@ class SubtractConnective(BinaryConnective):
         return torch.sub(tensor1, tensor2).float()
 
 class DefaultSubtractConnective(SubtractConnective):
-    def __init__(self):
-        super().__init__()
+    pass
 
 # Multiply Connective
 class MultiplyConnective(BinaryConnective):
@@ -287,9 +296,7 @@ class MultiplyConnective(BinaryConnective):
         return torch.mul(tensor1, tensor2).float()
 
 class DefaultMultiplyConnective(MultiplyConnective):
-    def __init__(self):
-        super().__init__()
-
+    pass
 # Divide Connective
 class DivideConnective(BinaryConnective):
     def __init__(self):
@@ -299,8 +306,7 @@ class DivideConnective(BinaryConnective):
         return torch.div(tensor1, tensor2).float()
 
 class DefaultDivideConnective(DivideConnective):
-    def __init__(self):
-        super().__init__()
+    pass
 
 
 class LessThanOrEqualConnective(BinaryConnective):
@@ -315,8 +321,7 @@ class LessThanOrEqualConnective(BinaryConnective):
         )
 
 class DefaultLessThanOrEqualConnective(LessThanOrEqualConnective):
-    def __init__(self):
-        super().__init__()
+    pass
 
 # MoreThanOrEqual Connective
 class MoreThanOrEqualConnective(BinaryConnective):
@@ -331,5 +336,4 @@ class MoreThanOrEqualConnective(BinaryConnective):
         )
 
 class DefaultMoreThanOrEqualConnective(MoreThanOrEqualConnective):
-    def __init__(self):
-        super().__init__()
+    pass
