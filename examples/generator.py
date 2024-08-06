@@ -48,18 +48,22 @@ def determine_relationship(circle_center, circle_radius, rect_tl, rect_br):
     # Otherwise, it's overlapping
     return 1
 
-# Generate dataset
-def generate_dataset(num_images, output_dir='datasets/shape_dataset'):
+# Generate balanced dataset
+def generate_balanced_dataset(num_images_per_class, output_dir='datasets/shape_dataset'):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
     data = []
+    counts = {0: 0, 1: 0, 2: 0}
     
-    for i in range(num_images):
+    while min(counts.values()) < num_images_per_class:
         img, circle_center, circle_radius, rect_tl, rect_br = create_image_with_shapes()
         label = determine_relationship(circle_center, circle_radius, rect_tl, rect_br)
-        img_path = os.path.join(output_dir, f'image_{i}.png')
-        img.save(img_path)
-        data.append((img_path, label))
+        
+        if counts[label] < num_images_per_class:
+            img_path = os.path.join(output_dir, f'image_{len(data)}.png')
+            img.save(img_path)
+            data.append((img_path, label))
+            counts[label] += 1
     
     return data

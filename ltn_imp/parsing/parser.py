@@ -175,8 +175,9 @@ class ExpressionVisitor(Visitor):
             DivisionExpression: Divide,
             LessThanExpression: LessThan,
             MoreThanExpression: MoreThan,
-            LessEqualExpression: LessThanEqual,
-            MoreEqualExpression: MoreThanEqual
+
+            LessEqualExpression: LessThanEqual, # Still Problematic
+            MoreEqualExpression: MoreThanEqual  # Still Problematic
         }
 
         self.quantifier_map = {
