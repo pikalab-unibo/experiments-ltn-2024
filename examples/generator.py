@@ -48,11 +48,11 @@ def draw_rectangles(top_left_x, top_left_y, bottom_right_x, bottom_right_y, pred
     draw = ImageDraw.Draw(img)
 
     # Draw the ground truth rectangle
-    draw.rectangle([(top_left_x, top_left_y), (bottom_right_x, bottom_right_y)], outline='blue', width=3)
+    draw.rectangle([(top_left_x, top_left_y), (bottom_right_x, bottom_right_y)], outline='red', width=3)
 
     # Draw the predicted rectangle
     draw.rectangle([(predicted_top_left_x, predicted_top_left_y), 
-                    (predicted_bottom_right_x, predicted_bottom_right_y)], outline='purple', width=3)
+                    (predicted_bottom_right_x, predicted_bottom_right_y)], outline='green', width=3)
 
     return img
 
