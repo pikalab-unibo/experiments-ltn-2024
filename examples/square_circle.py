@@ -15,6 +15,9 @@ from ltn_imp.automation.knowledge_base import KnowledgeBase
 from ltn_imp.automation.data_loaders import LoaderWrapper
 from models import *
 
+from examples.generator import generate_balanced_dataset, draw_circles, draw_rectangles
+import matplotlib.pyplot as plt
+
 data, metadata = generate_balanced_dataset(100)
 data = pd.DataFrame(data)
 metadata = pd.DataFrame(metadata)
@@ -187,8 +190,27 @@ evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
 evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
 print()
 
-kb.optimize(num_epochs=21, lr=0.01, log_steps=5)
+kb.optimize(num_epochs=5, lr=0.01, log_steps=2)
 
 print()
 evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
 evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
+
+
+def save_image(img, filename):
+    img.save(filename)
+
+test_data, test_metadata = next(iter(test_circle_dataloader))
+circle.eval()
+instance = test_data[1].unsqueeze(0)
+c_x, c_y, r = circle(instance)
+circle_img = draw_circles(*test_metadata[1], c_x, c_y, r)
+save_image(circle_img, "predicted_circle.png")
+
+
+test_data, test_metadata = next(iter(test_rect_dataloader))
+rectangle.eval()
+instance = test_data[2].unsqueeze(0)
+t_x, t_y, b_x, b_y = rectangle(instance)
+rectangle_img = draw_rectangles(*test_metadata[2], t_x, t_y, b_x, b_y)
+save_image(rectangle_img, "predicted_rectangle.png")
