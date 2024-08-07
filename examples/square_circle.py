@@ -86,14 +86,14 @@ loader = LoaderWrapper(loader=train_dataloader, variables=["i"], targets=["y"])
 
 rule_to_loader = {rule: [loader] for rule in learning_rules }
 
-quantifier_imp = {"forall" : "pmean_error"}
+quantifier_imp = {"forall": "pmean_error"}
 
 connective_imp = {"eq": "tan"}
 
 constants = {
-    "in" : torch.tensor([0.]),
-    "int" : torch.tensor([1.]),
-    "out" : torch.tensor([2.]),
+    "in": torch.tensor([0.]),
+    "int": torch.tensor([1.]),
+    "out": torch.tensor([2.]),
 }
 
 kb = KnowledgeBase(
