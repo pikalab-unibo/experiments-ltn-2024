@@ -7,22 +7,38 @@ import numpy as np
 def denormalize_coordinates(value, max_value):
     return value * max_value
 
-def draw_shapes(center_x, center_y, radius, top_left_x, top_left_y, bottom_right_x, bottom_right_y,
-                predicted_center_x, predicted_center_y, predicted_radius, predicted_top_left_x, predicted_top_left_y, 
-                predicted_bottom_right_x, predicted_bottom_right_y, image_size=(128, 128)):
+def draw_circles(center_x, center_y, radius, predicted_center_x, predicted_center_y, predicted_radius, image_size=(128, 128)):
     # Denormalize the coordinates for ground truth
     center_x = denormalize_coordinates(center_x, image_size[0])
     center_y = denormalize_coordinates(center_y, image_size[1])
     radius = denormalize_coordinates(radius, min(image_size))
+
+    # Denormalize the coordinates for prediction
+    predicted_center_x = denormalize_coordinates(predicted_center_x, image_size[0])
+    predicted_center_y = denormalize_coordinates(predicted_center_y, image_size[1])
+    predicted_radius = denormalize_coordinates(predicted_radius, min(image_size))
+
+    img = Image.new('RGB', image_size, color='white')
+    draw = ImageDraw.Draw(img)
+
+    # Draw the ground truth circle
+    draw.ellipse((center_x - radius, center_y - radius, center_x + radius, center_y + radius), outline='red', width=3)
+
+    # Draw the predicted circle
+    draw.ellipse((predicted_center_x - predicted_radius, predicted_center_y - predicted_radius, 
+                  predicted_center_x + predicted_radius, predicted_center_y + predicted_radius), outline='green', width=3)
+
+    return img
+
+def draw_rectangles(top_left_x, top_left_y, bottom_right_x, bottom_right_y, predicted_top_left_x, predicted_top_left_y, 
+                    predicted_bottom_right_x, predicted_bottom_right_y, image_size=(128, 128)):
+    # Denormalize the coordinates for ground truth
     top_left_x = denormalize_coordinates(top_left_x, image_size[0])
     top_left_y = denormalize_coordinates(top_left_y, image_size[1])
     bottom_right_x = denormalize_coordinates(bottom_right_x, image_size[0])
     bottom_right_y = denormalize_coordinates(bottom_right_y, image_size[1])
 
     # Denormalize the coordinates for prediction
-    predicted_center_x = denormalize_coordinates(predicted_center_x, image_size[0])
-    predicted_center_y = denormalize_coordinates(predicted_center_y, image_size[1])
-    predicted_radius = denormalize_coordinates(predicted_radius, min(image_size))
     predicted_top_left_x = denormalize_coordinates(predicted_top_left_x, image_size[0])
     predicted_top_left_y = denormalize_coordinates(predicted_top_left_y, image_size[1])
     predicted_bottom_right_x = denormalize_coordinates(predicted_bottom_right_x, image_size[0])
@@ -31,13 +47,10 @@ def draw_shapes(center_x, center_y, radius, top_left_x, top_left_y, bottom_right
     img = Image.new('RGB', image_size, color='white')
     draw = ImageDraw.Draw(img)
 
-    # Draw the ground truth shapes
-    draw.ellipse((center_x - radius, center_y - radius, center_x + radius, center_y + radius), outline='red', width=3)
+    # Draw the ground truth rectangle
     draw.rectangle([(top_left_x, top_left_y), (bottom_right_x, bottom_right_y)], outline='blue', width=3)
 
-    # Draw the predicted shapes
-    draw.ellipse((predicted_center_x - predicted_radius, predicted_center_y - predicted_radius, 
-                  predicted_center_x + predicted_radius, predicted_center_y + predicted_radius), outline='green', width=3)
+    # Draw the predicted rectangle
     draw.rectangle([(predicted_top_left_x, predicted_top_left_y), 
                     (predicted_bottom_right_x, predicted_bottom_right_y)], outline='purple', width=3)
 
