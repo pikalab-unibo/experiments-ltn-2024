@@ -159,7 +159,6 @@ class LogicParser(nl.LogicParser):
                     return NegativeExpression(term)
                 else:
                     term = self.process_next_expression(tok)
-                    print(term)
                     return NegativeExpression(term)
         return super().handle_negation(tok, context)
     

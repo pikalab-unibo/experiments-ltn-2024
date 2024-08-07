@@ -49,7 +49,6 @@ class ImageDataset(Dataset):
 
 batch_size = 64
 
-
 # Split the data into training and test sets
 train_data, test_data, train_labels, test_labels = train_test_split(images, labels, test_size=0.2, random_state=42)
 
@@ -71,7 +70,6 @@ def evaluate_model_circle(model, dataloader, device='cpu'):
     model.eval()
     all_preds = []
     all_labels = []
-
     with torch.no_grad():
         for inputs, labels in dataloader:
             inputs = inputs.to(device)
@@ -86,7 +84,8 @@ def evaluate_model_circle(model, dataloader, device='cpu'):
     all_labels = np.concatenate(all_labels, axis=0)
 
     mae = mean_absolute_error(all_labels, all_preds)
-    print(f'Mean Absolute Error: {mae:.4f}')
+    print(f'Mean Absolute Error for Circle: {mae:.4f}')
+    model.train()
     return mae
 
 
@@ -95,7 +94,6 @@ def evaluate_model_rect(model, dataloader, device='cpu'):
     model.eval()
     all_preds = []
     all_labels = []
-
     with torch.no_grad():
         for inputs, labels in dataloader:
             inputs = inputs.to(device)
@@ -110,7 +108,8 @@ def evaluate_model_rect(model, dataloader, device='cpu'):
     all_labels = np.concatenate(all_labels, axis=0)
 
     mae = mean_absolute_error(all_labels, all_preds)
-    print(f'Mean Absolute Error: {mae:.4f}')
+    print(f'Mean Absolute Error for Rectangle: {mae:.4f}')
+    model.train()
     return mae
 
 class EvalDataset(Dataset):
@@ -126,30 +125,15 @@ class EvalDataset(Dataset):
         metadata = self.metadata[idx]
         return image, metadata
     
-batch_size = 25
-
 circle_metadata = metadata[["circle_center_x","circle_center_y", "circle_radius"]]
-
 rectangle_metadata = metadata[["rect_tl_x",	"rect_tl_y"	,"rect_br_x"	,"rect_br_y"]]
-
 train_images, test_images, train_circle_labels, test_circle_labels = train_test_split( images, circle_metadata.values, test_size=0.2, random_state=42)
-
 train_images, test_images, train_rect_labels, test_rect_labels = train_test_split(images, rectangle_metadata.values, test_size=0.2, random_state=42)
-
-# Create the training and test datasets for circles
-train_circle_dataset = EvalDataset(train_images, train_circle_labels)
 test_circle_dataset = EvalDataset(test_images, test_circle_labels)
-
-# Create the training and test datasets for rectangles
-train_rect_dataset = EvalDataset(train_images, train_rect_labels)
 test_rect_dataset = EvalDataset(test_images, test_rect_labels)
 
-# Circle dataloaders
 test_circle_dataloader = DataLoader(test_circle_dataset, batch_size=batch_size, shuffle=False)
-
-# Rectangle dataloaders
 test_rect_dataloader = DataLoader(test_rect_dataset, batch_size=batch_size, shuffle=False)
-
 
 
 ancillary_rules = [
@@ -196,15 +180,15 @@ kb = KnowledgeBase(
     constant_mapping=constants
 )
 
+print([kb.converter.parse(rule) for rule in kb.ancillary_rules])
+print()
 
 evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
-print()
-evaluate_model_rect(rectangle, train_rect_dataloader, device='cpu')
+evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
 print()
 
-kb.optimize(num_epochs=5, lr=0.0001, log_steps=1)
+kb.optimize(num_epochs=21, lr=0.001, log_steps=5)
 
 print()
 evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
-print()
-evaluate_model_rect(rectangle, train_rect_dataloader, device='cpu')
+evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
