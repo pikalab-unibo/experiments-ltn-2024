@@ -137,9 +137,9 @@ test_rect_dataloader = DataLoader(test_rect_dataset, batch_size=batch_size, shuf
 
 
 ancillary_rules = [
-    "forall c1 c2 r b11 b12 t11 t12. Inside(c1, c2, r, b11, b12, t11, t12) <-> (((b11 + r) <= c1 and (c1 <= (t11 - r))) and ((b12 + r) <= c2 and (c2 <= (t12 - r))))",
+    "forall c1 c2 r b11 b12 t11 t12. Inside(c1, c2, r, b11, b12, t11, t12) <-> ((((b11 + r) <= c1) and (c1 <= (t11 - r))) and ( ((b12 + r) <= c2) and (c2 <= (t12 - r))))",
     "forall c1 c2 r b11 b12 t11 t12. Outside(c1, c2, r, b11, b12, t11, t12) <-> ((((c1 + r) <= b11) or ((c1 - r) >= t11) ) or ( ((c2 + r) <= b12) or ((c2 - r) >= t12)))",
-    "forall c1 c2 r b11 b12 t11 t12. Intersect(c1, c2, r, b11, b12, t11, t12) <-> (not Inside(c1, c2, r, b11, b12, t11, t12) and not Outside(c1, c2, r, b11, b12, t11, t12))",
+    "forall c1 c2 r b11 b12 t11 t12. Intersect(c1, c2, r, b11, b12, t11, t12) <-> ((not Inside(c1, c2, r, b11, b12, t11, t12)) and (not Outside(c1, c2, r, b11, b12, t11, t12)))",
 ]
 
 learning_rules = [
@@ -187,7 +187,7 @@ evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
 evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
 print()
 
-kb.optimize(num_epochs=21, lr=0.001, log_steps=5)
+kb.optimize(num_epochs=21, lr=0.01, log_steps=5)
 
 print()
 evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
