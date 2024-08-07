@@ -45,7 +45,7 @@ class ImageDataset(Dataset):
         label = self.labels[idx]
         return image, label
 
-batch_size = 25
+batch_size = 64
 
 # Split the data into training and test sets
 train_data, test_data, train_labels, test_labels = train_test_split(images, labels, test_size=0.2, random_state=42)
@@ -62,6 +62,11 @@ train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True
 # Create the test dataloader
 test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
+ancillary_rules = [
+    "forall c1 c2 r b11 b12 t11 t12. Inside(c1, c2, r, b11, b12, t11, t12) <-> (((b11 + r) <= c1 and (c1 <= (t11 - r))) and ((b12 + r) <= c2 and (c2 <= (t12 - r))))",
+    "forall c1 c2 r b11 b12 t11 t12. Outside(c1, c2, r, b11, b12, t11, t12) <-> ((((c1 + r) <= b11) or ((c1 - r) >= t11) ) or ( ((c2 + r) <= b12) or ((c2 - r) >= t12)))",
+    "forall c1 c2 r b11 b12 t11 t12. Intersect(c1, c2, r, b11, b12, t11, t12) <-> (not Inside(c1, c2, r, b11, b12, t11, t12) and not Outside(c1, c2, r, b11, b12, t11, t12))",
+]
 
 learning_rules = [
     "all i. ((y = in) -> (Circle(i, c1, c2, r) and Rect(i, t11, t12, b11, b12) and Inside(c1, c2, r, t11, t12, b11, b12)))",
@@ -75,9 +80,6 @@ rectangle = RectangleDetector()
 predicates = {
     "Circle": circle,
     "Rect": rectangle,
-    "Inside": Inside(),
-    "Outside": Outside(),
-    "Intersect": Intersect()
 }
 
 loader = LoaderWrapper(loader=train_dataloader, variables=["i"], targets=["y"])
@@ -96,7 +98,7 @@ constants = {
 
 kb = KnowledgeBase(
     predicates=predicates,
-    ancillary_rules=[],
+    ancillary_rules=ancillary_rules,
     learning_rules=learning_rules,
     rule_to_data_loader_mapping=rule_to_loader,
     quantifier_impls=quantifier_imp,
@@ -105,10 +107,10 @@ kb = KnowledgeBase(
 )
 
 
-print("Before Training", compute_accuracy(circle,rectangle, Inside(), Outside(), Intersect(), test_dataloader, torch.device("cpu")))
+print("Before Training", compute_accuracy(kb, test_dataloader, torch.device("cpu")))
 print()
 
-kb.optimize(num_epochs=51, lr=0.01)
+kb.optimize(num_epochs=5, lr=0.0001, log_steps=1)
 
 print()
-print("Before Training", compute_accuracy(circle,rectangle, Inside(), Outside(), Intersect(), test_dataloader, torch.device("cpu")))
+print("Before Training", compute_accuracy(kb, test_dataloader, torch.device("cpu")))

@@ -96,14 +96,8 @@ class Intersect(nn.Module):
     def __call__(self, *args):
         return self.forward(*args)
 
-def compute_accuracy(circle_model, rect_model, inside_model, outside_model, intersect_model, test_dataloader, device):
+def compute_accuracy(kb, test_dataloader, device):
     # Set models to evaluation mode
-    circle_model.eval()
-    rect_model.eval()
-    inside_model.eval()
-    outside_model.eval()
-    intersect_model.eval()
-
     correct = 0
     total = 0
 
@@ -115,19 +109,19 @@ def compute_accuracy(circle_model, rect_model, inside_model, outside_model, inte
             img_batch, label_batch = img_batch.to(device), label_batch.to(device)
 
             # Predict the circle parameters
-            c_x, c_y, r = circle_model(img_batch)
+            c_x, c_y, r = kb.predicates["Circle"](img_batch)
 
             # Get the bounding box for the true circle
-            t11, t12, b11, b12 = rect_model(img_batch)
+            t11, t12, b11, b12 = kb.predicates["Rect"](img_batch)
 
             for i in range(len(img_batch)):
                 # Extract the true one-hot encoded label
                 true_class = int(label_batch[i].item())
 
                 # Compute probabilities for being inside, outside, and intersecting
-                inside_prob = inside_model(c_x[i], c_y[i], r[i], t11[i], t12[i], b11[i], b12[i])
-                outside_prob = outside_model(c_x[i], c_y[i], r[i], t11[i], t12[i], b11[i], b12[i])
-                intersect_prob = intersect_model(c_x[i], c_y[i], r[i], t11[i], t12[i], b11[i], b12[i])
+                inside_prob = kb.predicates["Inside"](c_x[i], c_y[i], r[i], t11[i], t12[i], b11[i], b12[i])
+                outside_prob = kb.predicates["Outside"](c_x[i], c_y[i], r[i], t11[i], t12[i], b11[i], b12[i])
+                intersect_prob = kb.predicates["Intersect"](c_x[i], c_y[i], r[i], t11[i], t12[i], b11[i], b12[i])
 
                 # Stack probabilities to form a tensor
                 class_probs = torch.tensor([inside_prob, intersect_prob, outside_prob], device=device)
@@ -140,19 +134,12 @@ def compute_accuracy(circle_model, rect_model, inside_model, outside_model, inte
                 class_total[true_class] += 1
                 total += 1
 
-    accuracy = correct / total
+    accuracy = correct / total if total > 0 else 0
     class_accuracies = [class_correct[i] / class_total[i] if class_total[i] > 0 else 0 for i in range(3)]
 
     # Debug: print class-wise accuracies
     for i, class_acc in enumerate(class_accuracies):
         print(f"Accuracy for class {i}: {class_acc * 100:.2f}%")
     print(f"Overall accuracy: {accuracy * 100:.2f}%")
-
-    # Set models back to training mode
-    circle_model.train()
-    rect_model.train()
-    inside_model.train()
-    outside_model.train()
-    intersect_model.train()
 
     return accuracy, class_accuracies
