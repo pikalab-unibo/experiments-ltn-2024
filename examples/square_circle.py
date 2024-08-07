@@ -4,6 +4,7 @@ from PIL import Image
 from examples.generator import generate_balanced_dataset
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
 
 # Torch
 import torch
@@ -12,10 +13,11 @@ from torch.utils.data import DataLoader, Dataset
 # LTN
 from ltn_imp.automation.knowledge_base import KnowledgeBase
 from ltn_imp.automation.data_loaders import LoaderWrapper
-
 from models import *
 
-data = pd.DataFrame(generate_balanced_dataset(100))
+data, metadata = generate_balanced_dataset(100)
+data = pd.DataFrame(data)
+metadata = pd.DataFrame(metadata)
 
 image_paths = [item for item in data[0]]
 images = []
@@ -47,6 +49,7 @@ class ImageDataset(Dataset):
 
 batch_size = 64
 
+
 # Split the data into training and test sets
 train_data, test_data, train_labels, test_labels = train_test_split(images, labels, test_size=0.2, random_state=42)
 
@@ -61,6 +64,93 @@ train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True
 
 # Create the test dataloader
 test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+
+def evaluate_model_circle(model, dataloader, device='cpu'):
+    model.to(device)
+    model.eval()
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            c_x, c_y, r = model(inputs)
+            preds = torch.stack((c_x, c_y, r), dim=1)
+
+            all_preds.append(preds.cpu().numpy())
+            all_labels.append(labels.cpu().numpy())
+
+    all_preds = np.concatenate(all_preds, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
+
+    mae = mean_absolute_error(all_labels, all_preds)
+    print(f'Mean Absolute Error: {mae:.4f}')
+    return mae
+
+
+def evaluate_model_rect(model, dataloader, device='cpu'):
+    model.to(device)
+    model.eval()
+    all_preds = []
+    all_labels = []
+
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            tl_x, tl_y, br_x, br_y = model(inputs)
+            preds = torch.stack((tl_x, tl_y, br_x, br_y), dim=1)
+
+            all_preds.append(preds.cpu().numpy())
+            all_labels.append(labels.cpu().numpy())
+
+    all_preds = np.concatenate(all_preds, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
+
+    mae = mean_absolute_error(all_labels, all_preds)
+    print(f'Mean Absolute Error: {mae:.4f}')
+    return mae
+
+class EvalDataset(Dataset):
+    def __init__(self, images, metadata):
+        self.images = torch.stack([torch.tensor(image).permute(2, 0, 1) for image in images])
+        self.metadata = torch.tensor(metadata).float()
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        image = self.images[idx]
+        metadata = self.metadata[idx]
+        return image, metadata
+    
+batch_size = 25
+
+circle_metadata = metadata[["circle_center_x","circle_center_y", "circle_radius"]]
+
+rectangle_metadata = metadata[["rect_tl_x",	"rect_tl_y"	,"rect_br_x"	,"rect_br_y"]]
+
+train_images, test_images, train_circle_labels, test_circle_labels = train_test_split( images, circle_metadata.values, test_size=0.2, random_state=42)
+
+train_images, test_images, train_rect_labels, test_rect_labels = train_test_split(images, rectangle_metadata.values, test_size=0.2, random_state=42)
+
+# Create the training and test datasets for circles
+train_circle_dataset = EvalDataset(train_images, train_circle_labels)
+test_circle_dataset = EvalDataset(test_images, test_circle_labels)
+
+# Create the training and test datasets for rectangles
+train_rect_dataset = EvalDataset(train_images, train_rect_labels)
+test_rect_dataset = EvalDataset(test_images, test_rect_labels)
+
+# Circle dataloaders
+test_circle_dataloader = DataLoader(test_circle_dataset, batch_size=batch_size, shuffle=False)
+
+# Rectangle dataloaders
+test_rect_dataloader = DataLoader(test_rect_dataset, batch_size=batch_size, shuffle=False)
+
+
 
 ancillary_rules = [
     "forall c1 c2 r b11 b12 t11 t12. Inside(c1, c2, r, b11, b12, t11, t12) <-> (((b11 + r) <= c1 and (c1 <= (t11 - r))) and ((b12 + r) <= c2 and (c2 <= (t12 - r))))",
@@ -107,10 +197,14 @@ kb = KnowledgeBase(
 )
 
 
-print("Before Training", compute_accuracy(kb, test_dataloader, torch.device("cpu")))
+evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
+print()
+evaluate_model_rect(rectangle, train_rect_dataloader, device='cpu')
 print()
 
 kb.optimize(num_epochs=5, lr=0.0001, log_steps=1)
 
 print()
-print("Before Training", compute_accuracy(kb, test_dataloader, torch.device("cpu")))
+evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
+print()
+evaluate_model_rect(rectangle, train_rect_dataloader, device='cpu')
