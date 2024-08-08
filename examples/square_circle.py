@@ -1,11 +1,10 @@
 # Data Processing
 import pandas as pd
 from PIL import Image
-from examples.generator import generate_balanced_dataset
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
-
+from examples.generator import generate_balanced_dataset, draw_circles, draw_rectangles
 # Torch
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -15,8 +14,6 @@ from ltn_imp.automation.knowledge_base import KnowledgeBase
 from ltn_imp.automation.data_loaders import LoaderWrapper
 from models import *
 
-from examples.generator import generate_balanced_dataset, draw_circles, draw_rectangles
-import matplotlib.pyplot as plt
 
 data, metadata = generate_balanced_dataset(100)
 data = pd.DataFrame(data)
@@ -139,16 +136,24 @@ test_circle_dataloader = DataLoader(test_circle_dataset, batch_size=batch_size, 
 test_rect_dataloader = DataLoader(test_rect_dataset, batch_size=batch_size, shuffle=False)
 
 
+# C1 -> Center_X, C2 -> Center_y, R->Radius, b1-> Bottom_Right_X, T1 -> Top_Left X, B2 -> Bottom_Right_Y, T2-> Top_Left_Y
+
 ancillary_rules = [
-    "forall c1 c2 r b11 b12 t11 t12. Inside(c1, c2, r, b11, b12, t11, t12) <-> ((((b11 + r) <= c1) and (c1 <= (t11 - r))) and ( ((b12 + r) <= c2) and (c2 <= (t12 - r))))",
-    "forall c1 c2 r b11 b12 t11 t12. Outside(c1, c2, r, b11, b12, t11, t12) <-> ((((c1 + r) <= b11) or ((c1 - r) >= t11) ) or ( ((c2 + r) <= b12) or ((c2 - r) >= t12)))",
-    "forall c1 c2 r b11 b12 t11 t12. Intersect(c1, c2, r, b11, b12, t11, t12) <-> ((not Inside(c1, c2, r, b11, b12, t11, t12)) and (not Outside(c1, c2, r, b11, b12, t11, t12)))",
+    # Inside rule
+    "forall c1 c2 r t1 t2 b1 b2. Inside(c1, c2, r, t1, t2, b1, b2) <-> (((c1 - r) > t1) and ((c1 + r) < b1) and ((c2 - r) > b2) and ((c2 + r) < t2))",
+
+    # Outside rule
+    "forall c1 c2 r t1 t2 b1 b2. Outside(c1, c2, r, t1, t2, b1, b2) <-> (((c1 + r) < t1) or ((c1 - r) > b1) or ((c2 + r) < b2) or ((c2 - r) > t2))",
+
+    # Independent Intersect rule
+    "forall c1 c2 r t1 t2 b1 b2 . Intersect(c1, c2, r, t1, t2, b1, b2) <-> ( (not Inside(c1, c2, r, t1, t2, b1, b2)) and (not Inside(c1, c2, r, t1, t2, b1, b2)))",
 ]
 
 learning_rules = [
-    "all i. ((y = in) -> (Circle(i, c1, c2, r) and Rect(i, t11, t12, b11, b12) and Inside(c1, c2, r, t11, t12, b11, b12)))",
-    "all i. ((y = int) -> (Circle(i, c1, c2, r) and Rect(i, t11, t12, b11, b12) and Intersect(c1, c2, r, t11, t12, b11, b12)))",
-    "all i. ((y = out) -> (Circle(i, c1, c2, r) and Rect(i, t11, t12, b11, b12) and Outside(c1, c2, r, t11, t12, b11, b12)))"
+    "all i. (Circle(i, c1, c2, r) and Rect(i, t1, t2, b1, b2) and (t1 < b1) and (t2 > b2))",
+    "all i. ((y = in) ->  Inside(c1, c2, r, t1, t2, b1, b2))",
+    "all i. ((y = int) -> Intersect(c1, c2, r, t1, t2, b1, b2))",
+    "all i. ((y = out) -> Outside(c1, c2, r, t1, t2, b1, b2))",
 ]
 
 circle = CircleDetector()
@@ -171,6 +176,7 @@ constants = {
     "in": torch.tensor([0.]),
     "int": torch.tensor([1.]),
     "out": torch.tensor([2.]),
+    "min_radius": torch.tensor([0.08]),
 }
 
 kb = KnowledgeBase(
@@ -190,27 +196,30 @@ evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
 evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
 print()
 
-kb.optimize(num_epochs=5, lr=0.01, log_steps=2)
+kb.optimize(num_epochs=21, lr=0.01, log_steps=5)
 
 print()
 evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
 evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
-
+print()
 
 def save_image(img, filename):
     img.save(filename)
 
 test_data, test_metadata = next(iter(test_circle_dataloader))
 circle.eval()
-instance = test_data[1].unsqueeze(0)
+instance = test_data[0].unsqueeze(0)
 c_x, c_y, r = circle(instance)
+print(f"Center: ({c_x.item():.4f}, {c_y.item():.4f}),  Radius: {r.item():.4f}")
 circle_img = draw_circles(*test_metadata[1], c_x, c_y, r)
 save_image(circle_img, "predicted_circle.png")
-
+print()
 
 test_data, test_metadata = next(iter(test_rect_dataloader))
 rectangle.eval()
-instance = test_data[2].unsqueeze(0)
+instance = test_data[0].unsqueeze(0)
 t_x, t_y, b_x, b_y = rectangle(instance)
-rectangle_img = draw_rectangles(*test_metadata[2], t_x, t_y, b_x, b_y)
+print(f"Rectangle Top Left: ({t_x.item():.4f}, {t_y.item():.4f}), Bottom Right: ({b_x.item():.4f}, {b_y.item():.4f})")
+rectangle_img = draw_rectangles(*test_metadata[2], predicted_top_left_x=t_x, predicted_top_left_y=t_y, predicted_bottom_right_x=b_x, predicted_bottom_right_y=b_y)
 save_image(rectangle_img, "predicted_rectangle.png")
+

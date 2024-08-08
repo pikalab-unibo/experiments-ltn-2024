@@ -25,7 +25,7 @@ class CircleDetector(nn.Module):
         x = x.view(x.size(0), -1)
         x = F.leaky_relu(self.bn_fc1(self.fc1(x)))
         x = self.fc2(x)
-        c_x, c_y, r = torch.tanh(x[:, 0]), torch.tanh(x[:, 1]), torch.sigmoid(x[:, 2])
+        c_x, c_y, r = torch.sigmoid(x[:, 0]), torch.sigmoid(x[:, 1]), torch.sigmoid(x[:, 2])
         return c_x, c_y, r
 class RectangleDetector(torch.nn.Module):
     def __init__(self):
@@ -50,7 +50,7 @@ class RectangleDetector(torch.nn.Module):
         x = x.view(x.size(0), -1)
         x = F.leaky_relu(self.bn_fc1(self.fc1(x)))
         x = self.fc2(x)
-        t_x, t_y,b_x, b_y = torch.tanh(x[:, 0]), torch.tanh(x[:, 1]), torch.tanh(x[:, 2]), torch.tanh(x[:, 3])
+        t_x, t_y,b_x, b_y = torch.sigmoid(x[:, 0]), torch.sigmoid(x[:, 1]), torch.sigmoid(x[:, 2]), torch.sigmoid(x[:, 3])
         return t_x, t_y, b_x, b_y
 
 class Inside(nn.Module):
