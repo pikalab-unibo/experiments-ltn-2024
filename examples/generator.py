@@ -5,20 +5,8 @@ import csv
 import numpy as np
 import torch
 
-def denormalize_coordinates(value, max_value):
-    return value * max_value
-
 def draw_circles(center_x, center_y, radius, predicted_center_x, predicted_center_y, predicted_radius, image_size=(128, 128)):
     # Denormalize the coordinates for ground truth
-    center_x = denormalize_coordinates(center_x, image_size[0])
-    center_y = denormalize_coordinates(center_y, image_size[1])
-    radius = denormalize_coordinates(radius, min(image_size))
-
-    # Denormalize the coordinates for prediction
-    predicted_center_x = denormalize_coordinates(predicted_center_x, image_size[0])
-    predicted_center_y = denormalize_coordinates(predicted_center_y, image_size[1])
-    predicted_radius = denormalize_coordinates(predicted_radius, min(image_size))
-
     img = Image.new('RGB', image_size, color='white')
     draw = ImageDraw.Draw(img)
 
@@ -34,14 +22,6 @@ def draw_circles(center_x, center_y, radius, predicted_center_x, predicted_cente
 def draw_rectangles(top_left_x, top_left_y, bottom_right_x, bottom_right_y,
                     predicted_top_left_x, predicted_top_left_y, predicted_bottom_right_x, predicted_bottom_right_y, image_size=(128, 128)):
     # Denormalize the coordinates for ground truth
-    top_left_x = denormalize_coordinates(top_left_x, image_size[0])
-    top_left_y = denormalize_coordinates(top_left_y, image_size[1])
-    bottom_right_x = denormalize_coordinates(bottom_right_x, image_size[0])
-    bottom_right_y = denormalize_coordinates(bottom_right_y, image_size[1])
-    predicted_top_left_x = denormalize_coordinates(predicted_top_left_x, image_size[0])
-    predicted_top_left_y = denormalize_coordinates(predicted_top_left_y, image_size[1])
-    predicted_bottom_right_x = denormalize_coordinates(predicted_bottom_right_x, image_size[0])
-    predicted_bottom_right_y = denormalize_coordinates(predicted_bottom_right_y, image_size[1])
 
     if predicted_bottom_right_x < predicted_top_left_x:
         predicted_top_left_x, predicted_bottom_right_x = predicted_bottom_right_x, predicted_top_left_x
@@ -55,7 +35,7 @@ def draw_rectangles(top_left_x, top_left_y, bottom_right_x, bottom_right_y,
     draw.rectangle([(top_left_x, top_left_y),(bottom_right_x, bottom_right_y)], outline='red', width=3)
 
     # Draw the predicted rectangle
-    draw.rectangle([(predicted_top_left_x, predicted_top_left_y), (predicted_bottom_right_x, predicted_bottom_right_y)], outline='blue', width=3)
+    draw.rectangle([(predicted_top_left_x, predicted_top_left_y), (predicted_bottom_right_x, predicted_bottom_right_y)], outline='green', width=3)
     return img
 
 def create_image_with_shapes(image_size=(128, 128), circle_radius_range=(10, 19), rect_size_range=(19, 50), line_width=3):
@@ -110,7 +90,7 @@ def determine_relationship(circle_center, circle_radius, rect_tl, rect_br):
 
 # Normalize coordinates to be between -1 and 1
 def normalize_coordinates(value, max_value):
-    return (value / max_value) 
+    return value 
 
 # Generate balanced dataset
 def generate_balanced_dataset(num_images_per_class, output_dir='datasets/shape_dataset'):

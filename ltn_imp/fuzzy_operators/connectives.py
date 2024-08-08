@@ -224,6 +224,7 @@ class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0,
         super().__init__(self.implementation)
 
     def implementation(self, a, b):
+        
         # Ensure a and b have the same shape and are at least 2D tensors
         if a.ndim == 0:
             a = a.unsqueeze(0)
@@ -234,8 +235,7 @@ class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0,
         if b.ndim == 1:
             b = b.unsqueeze(1)
 
-        # Perform the operation using the Euclidean distance formula
-        alpha = 0.05  # You can adjust the value of alpha as needed
+        alpha = 0.005  # You can adjust the value of alpha as needed
         result = torch.exp(-alpha * torch.sqrt(torch.sum(torch.square(a - b), dim=1)))
         return result
     
@@ -243,7 +243,7 @@ DefaultEqConnective = TanEqConnective
 
 # LessThan Connective
 class LessThanConnective(BinaryConnective):
-    def __init__(self, k=1000):
+    def __init__(self, k=10):
         self.k = k
         super().__init__(self.implementation)
 
@@ -255,7 +255,7 @@ class DefaultLessThanConnective(LessThanConnective):
 
 # MoreThan Connective
 class MoreThanConnective(BinaryConnective):
-    def __init__(self, k=1000):
+    def __init__(self, k=10):
         self.k = k
         super().__init__(self.implementation)
 
@@ -310,7 +310,7 @@ class DefaultDivideConnective(DivideConnective):
 
 
 class LessThanOrEqualConnective(BinaryConnective):
-    def __init__(self, k=1000):
+    def __init__(self, k=10):
         self.k = k
         super().__init__(self.implementation)
 
@@ -325,7 +325,7 @@ class DefaultLessThanOrEqualConnective(LessThanOrEqualConnective):
 
 # MoreThanOrEqual Connective
 class MoreThanOrEqualConnective(BinaryConnective):
-    def __init__(self, k=1000):
+    def __init__(self, k=10):
         self.k = k
         super().__init__(self.implementation)
 
