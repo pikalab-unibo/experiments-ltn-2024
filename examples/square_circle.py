@@ -1,10 +1,11 @@
 # Data Processing
 import pandas as pd
 from PIL import Image
+from examples.generator import generate_balanced_dataset
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
-from examples.generator import generate_balanced_dataset, draw_circles, draw_rectangles
+
 # Torch
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -14,6 +15,8 @@ from ltn_imp.automation.knowledge_base import KnowledgeBase
 from ltn_imp.automation.data_loaders import LoaderWrapper
 from models import *
 
+from examples.generator import generate_balanced_dataset, draw_circles, draw_rectangles
+import matplotlib.pyplot as plt
 
 data, metadata = generate_balanced_dataset(100)
 data = pd.DataFrame(data)
@@ -150,10 +153,11 @@ ancillary_rules = [
 ]
 
 learning_rules = [
-    "all i. (Circle(i, c1, c2, r) and Rect(i, t1, t2, b1, b2) and (t1 < b1) and (t2 > b2))",
+    "all i. (Circle(i, c1, c2, r) and Rect(i, t1, t2, b1, b2) and (t1 < b1) and (t2 > b2) and ((t2 - b2) < max_length) and ((b1 - t1) < max_width))",
     "all i. ((y = in) ->  Inside(c1, c2, r, t1, t2, b1, b2))",
     "all i. ((y = int) -> Intersect(c1, c2, r, t1, t2, b1, b2))",
     "all i. ((y = out) -> Outside(c1, c2, r, t1, t2, b1, b2))",
+    "all i. ((r > min_radius) and ((c1 + r) < 1) and ((c1 - r) > 0) and ((c2 - r) > 0) and ((c2 + r) < 1))"
 ]
 
 circle = CircleDetector()
@@ -176,7 +180,9 @@ constants = {
     "in": torch.tensor([0.]),
     "int": torch.tensor([1.]),
     "out": torch.tensor([2.]),
-    "min_radius": torch.tensor([0.08]),
+    "min_radius": torch.tensor([0.1]),
+    "max_width": torch.tensor([0.5]),
+    "max_length": torch.tensor([0.5]),
 }
 
 kb = KnowledgeBase(
@@ -196,7 +202,7 @@ evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
 evaluate_model_rect(rectangle, test_rect_dataloader, device='cpu')
 print()
 
-kb.optimize(num_epochs=21, lr=0.01, log_steps=5)
+kb.optimize(num_epochs=21, lr=0.01, log_steps=10)
 
 print()
 evaluate_model_circle(circle, test_circle_dataloader, device='cpu')
