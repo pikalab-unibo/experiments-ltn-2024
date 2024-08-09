@@ -243,7 +243,7 @@ DefaultEqConnective = TanEqConnective
 
 # LessThan Connective
 class LessThanConnective(BinaryConnective):
-    def __init__(self, k=10):
+    def __init__(self, k=5):
         self.k = k
         super().__init__(self.implementation)
 
@@ -255,7 +255,7 @@ class DefaultLessThanConnective(LessThanConnective):
 
 # MoreThan Connective
 class MoreThanConnective(BinaryConnective):
-    def __init__(self, k=10):
+    def __init__(self, k=5):
         self.k = k
         super().__init__(self.implementation)
 
@@ -310,7 +310,7 @@ class DefaultDivideConnective(DivideConnective):
 
 
 class LessThanOrEqualConnective(BinaryConnective):
-    def __init__(self, k=10):
+    def __init__(self, k=5):
         self.k = k
         super().__init__(self.implementation)
 
@@ -325,7 +325,7 @@ class DefaultLessThanOrEqualConnective(LessThanOrEqualConnective):
 
 # MoreThanOrEqual Connective
 class MoreThanOrEqualConnective(BinaryConnective):
-    def __init__(self, k=10):
+    def __init__(self, k=5):
         self.k = k
         super().__init__(self.implementation)
 
