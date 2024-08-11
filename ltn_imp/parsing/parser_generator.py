@@ -70,6 +70,9 @@ class FOLSemantics:
     
     def direct(self, ast):
         return DirectEqualityExpression(ast[0], ast[2])
+    
+    def negative(self, ast):
+        return NegativeExpression(ast[1])
 
 class LTNParser():
     def __init__(self, path):

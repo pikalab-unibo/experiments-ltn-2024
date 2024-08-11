@@ -92,7 +92,7 @@ class ExpressionVisitor(Visitor):
             ImpExpression: Implies,
             IffExpression: Equiv,
             NegatedExpression: Not,
-            # NegativeExpression: Negative, TODO: NOT IMPLEMENTED
+            NegativeExpression: Negative,
             EqualityExpression: Eq_Regression,
             DirectEqualityExpression : Eq_Classification, # TODO: NOT IMPLEMENTED
             AdditionExpression: Add,
@@ -196,6 +196,11 @@ class ExpressionVisitor(Visitor):
             raise NotImplementedError(f"Unsupported binary expression type: {type(expression)}")
 
     def visit_NegatedExpression(self, expression):
+        connective = self.connective_map.get(type(expression))
+        term = self.visit(expression.term)
+        return ConvertedExpression(expression, lambda var_mapping: connective(term.converted(var_mapping)), self)
+    
+    def visit_NegativeExpression(self, expression):
         connective = self.connective_map.get(type(expression))
         term = self.visit(expression.term)
         return ConvertedExpression(expression, lambda var_mapping: connective(term.converted(var_mapping)), self)

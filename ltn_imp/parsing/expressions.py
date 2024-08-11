@@ -9,6 +9,9 @@ class BinaryExpression(Expression):
 
     def __repr__(self):
         return f"<{self.__class__.__name__}>: ({self.left} {self.operator} {self.right})"
+    
+    def __str__(self):
+        return f"({self.left} {self.operator} {self.right})"
 
 class AndExpression(BinaryExpression):
     def __init__(self, left, right):
@@ -32,6 +35,19 @@ class NegatedExpression(Expression):
 
     def __repr__(self):
         return f"<{self.__class__.__name__}>: ~({self.term})"
+    
+    def __str__(self):
+        return f"~({self.term})"
+    
+class NegativeExpression(Expression):
+    def __init__(self, term):
+        self.term = term
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}>: -({self.term})"
+    
+    def __str__(self):
+        return f"-({self.term})"
 
 class EqualityExpression(BinaryExpression):
     def __init__(self, left, right):
@@ -81,6 +97,9 @@ class QuantifiedExpression(Expression):
 
     def __repr__(self):
         return f"<{self.__class__.__name__}>: {self.quantifier} {self.variable}.({self.term})"
+    
+    def __str__(self):
+        return f"{self.quantifier} {self.variable}.({self.term})"
 
 class ExistsExpression(QuantifiedExpression):
     def __init__(self, variable, term):
@@ -99,6 +118,9 @@ class ApplicationExpression(Expression):
         args = ", ".join(map(str, self.args))
         return f"<{self.__class__.__name__}>: {self.function}({args})"
     
+    def __str__(self):
+        args = ", ".join(map(str, self.args))
+        return f"{self.function}({args})"
 class VariableExpression(Expression):
     def __init__(self, variable):
         self.variable = variable

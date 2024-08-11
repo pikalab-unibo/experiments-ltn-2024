@@ -21,6 +21,7 @@ expression
     | multiplication
     | division
     | negation
+    | negative
     | predicate
     | atom
     ;
@@ -82,7 +83,11 @@ division
     ;
 
 negation
-    = ('~' | 'not' | '-') expression
+    = ('~' | 'not') expression
+    ;
+
+negative
+    = '-'atom
     ;
 
 quantified
