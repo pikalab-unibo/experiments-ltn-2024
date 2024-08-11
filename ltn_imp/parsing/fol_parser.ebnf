@@ -1,0 +1,123 @@
+@@grammar::FOLParser
+@@whitespace::/\s+/
+
+start = expression $;
+
+expression
+    =
+    | quantified
+    | equivalence
+    | implication
+    | disjunction
+    | conjunction
+    | less_than
+    | more_than
+    | less_equal
+    | more_equal
+    | equality
+    | direct
+    | addition
+    | subtraction
+    | multiplication
+    | division
+    | negation
+    | predicate
+    | atom
+    ;
+
+equivalence
+    = expression '<->' expression
+    ;
+
+implication
+    = expression '->' expression
+    ;
+
+disjunction
+    = expression ( '|' | 'or' ) expression
+    ;
+
+conjunction
+    = expression ( '&' | 'and' ) expression
+    ;
+
+less_than
+    = expression '<' expression
+    ;
+
+more_than
+    = expression '>' expression
+    ;
+
+less_equal
+    = expression '<=' expression
+    ;
+
+more_equal
+    = expression '>=' expression
+    ;
+
+equality
+    = expression '=' expression
+    ;
+
+direct
+    = expression '==' expression
+    ;
+
+addition
+    = expression '+' expression
+    ;
+
+subtraction
+    = expression '-' expression
+    ;
+
+multiplication
+    = expression '*' expression
+    ;
+
+division
+    = expression '/' expression
+    ;
+
+negation
+    = ('~' | 'not' | '-') expression
+    ;
+
+quantified
+    = quantifier variable '.' expression
+    ;
+
+quantifier
+    = 'forall' | 'exists' | 'all' 
+    ;
+
+predicate
+    = @:/[A-Z][a-zA-Z0-9]*/ '(' @:variables ')'
+    ;
+
+variables
+    = @:variable {@:parameter}*
+    ;
+
+parameter
+    = (',' @:variable)
+    ;
+
+atom
+    =
+    | constant
+    | variable
+    | '(' @:expression ')'
+    ;
+
+constant
+    = /\d+\.\d+/  # Matches floating-point numbers like 1.0, 123.45
+    | /\d+/       # Matches integers like 1, 42, 123
+    | /\.\d+/     # Matches floating-point numbers without leading digits like .5, .123
+    ;
+
+variable
+    = /[a-z][a-z0-9]*/
+    ;

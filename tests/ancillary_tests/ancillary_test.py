@@ -23,8 +23,8 @@ class TestModuleFactory(unittest.TestCase):
         self.assertAlmostEqualTensor(result, expected_value)
 
     def test_simple_addition(self):
-        expr = "all x y. (addition(x,y) <->  x + y)"
-        expected_name = "addition"
+        expr = "forall x. (Addition(x,y) <->  x + y)"
+        expected_name = "Addition"
         expected_params = ['x', 'y']
         expected_value = torch.tensor(5.0)  # Example expected value
         inputs = [torch.tensor(2.0), torch.tensor(3.0), torch.tensor(5.0)]

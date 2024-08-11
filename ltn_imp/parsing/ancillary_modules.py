@@ -12,8 +12,8 @@ class ModuleFactory:
         while hasattr(expression, 'term'):
             expression = expression.term
 
-        if hasattr(expression, 'first'):
-            expression = expression.first
+        if hasattr(expression, 'left'):
+            expression = expression.left
             
         while hasattr(expression, 'function'):
             expression = expression.function
@@ -27,8 +27,8 @@ class ModuleFactory:
         while hasattr(expression, 'term'):
             expression = expression.term
         
-        if hasattr(expression, 'first'):
-            expression = expression.first
+        if hasattr(expression, 'left'):
+            expression = expression.left
         
         return [str(arg) for arg in expression.args]
     
@@ -39,7 +39,7 @@ class ModuleFactory:
         while hasattr(expression, 'term'):
             expression = expression.term
 
-        return self.converter(str(expression.second)) 
+        return self.converter(str(expression.right)) 
 
     def create_module(self, expression):
 
