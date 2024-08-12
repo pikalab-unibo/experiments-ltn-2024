@@ -20,6 +20,7 @@ jobs:
         python-version:
           - '3.11'
           - '3.12'
+
     runs-on: ${{ matrix.os }}
     name: Test on Python ${{ matrix.python-version }}, on ${{ matrix.os }}
     timeout-minutes: 45
@@ -55,6 +56,11 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'  # Specify the Python version you want to use
 
       - name: Install poetry
         run: pip install poetry
