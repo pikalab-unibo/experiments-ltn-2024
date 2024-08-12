@@ -4,90 +4,126 @@
 start = expression $;
 
 expression
-    =
-    | quantified
-    | equivalence
+    = quantified
+    | logical_expression
+    ;
+
+logical_expression
+    = logical_operators
+    | comparison_expression
+    ;
+
+logical_operators
+    = equivalence
     | implication
     | disjunction
     | conjunction
-    | less_than
+    ;
+
+comparison_expression
+    = comparison_operators
+    | arithmetic_expression
+    ;
+
+comparison_operators
+    = less_than
     | more_than
     | less_equal
     | more_equal
     | equality
     | direct
-    | addition
+    ;
+
+arithmetic_expression
+    = addition_subtraction
+    ;
+
+addition_subtraction
+    = addition
     | subtraction
-    | multiplication
+    | multiplication_division
+    ;
+
+multiplication_division
+    = multiplication
     | division
-    | negation
+    | exponentiation
+    ;
+
+exponentiation
+    = primary_expression '^' primary_expression
+    | primary_expression
+    ;
+
+primary_expression
+    = negation
     | negative
     | predicate
     | atom
     ;
 
 equivalence
-    = expression '<->' expression
+    = logical_expression '<->' logical_expression
     ;
 
 implication
-    = expression '->' expression
+    = logical_expression '->' logical_expression
     ;
 
 disjunction
-    = expression ( '|' | 'or' ) expression
+    = logical_expression ( '|' | 'or' ) logical_expression
     ;
 
 conjunction
-    = expression ( '&' | 'and' ) expression
+    = logical_expression ( '&' | 'and' ) logical_expression
     ;
 
 less_than
-    = expression '<' expression
+    = comparison_expression '<' comparison_expression
     ;
 
 more_than
-    = expression '>' expression
+    = comparison_expression '>' comparison_expression
     ;
 
 less_equal
-    = expression '<=' expression
+    = comparison_expression '<=' comparison_expression
     ;
 
 more_equal
-    = expression '>=' expression
+    = comparison_expression '>=' comparison_expression
     ;
 
 equality
-    = expression '=' expression
+    = comparison_expression '=' comparison_expression
     ;
 
 direct
-    = expression '==' expression
+    = comparison_expression '==' comparison_expression
     ;
 
 addition
-    = expression '+' expression
+    = addition_subtraction '+' multiplication_division
     ;
 
 subtraction
-    = expression '-' expression
+    = addition_subtraction '-' multiplication_division
     ;
 
 multiplication
-    = expression '*' expression
+    = multiplication_division '*' primary_expression
     ;
 
 division
-    = expression '/' expression
+    = multiplication_division '/' primary_expression
     ;
 
 negation
-    = ('~' | 'not') expression
+    = ('~' | 'not') primary_expression
     ;
 
 negative
-    = '-'atom
+    = '-' primary_expression
     ;
 
 quantified
@@ -95,7 +131,7 @@ quantified
     ;
 
 quantifier
-    = 'forall' | 'exists' | 'all' 
+    = 'forall' | 'exists' | 'all' 
     ;
 
 predicate
@@ -111,8 +147,7 @@ parameter
     ;
 
 atom
-    =
-    | constant
+    = constant
     | variable
     | '(' @:expression ')'
     ;
