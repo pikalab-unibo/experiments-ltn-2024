@@ -1,6 +1,5 @@
 instances:
   - flower
-  
 features:
   flower:
     - in: sepal_length
@@ -14,19 +13,32 @@ constants:
   - versicolor
   - virginica
 
-learnable:
-  - predicate: Iris
-    args:
-      - in: flower
-      - out: type
-    structure:
-      type: feed-forward
-      layers:
-        # if name of instance `inst` if provided, this is interpreted as
-        # the tensor `[inst[feat1], ..., inst[featN]]` covering the N input features of `inst`
-        in: flower 
-        hidden: [len(features) * 2, len(features)]
-        out: ohe(type) # one hot encoding of class attribute
+predicates:
+    Iris:
+      args:
+        - in: flower
+        - out: type
+      structure:
+        type: feed-forward
+        layers:
+          # if name of instance `inst` if provided, this is interpreted as
+          # the tensor `[inst[feat1], ..., inst[featN]]` covering the N input features of `inst`
+          in: flower 
+          hidden: [len(features) * 2, len(features)]
+          out: ohe(type) # one hot encoding of class attribute
+
+    Iris_2:
+      args:
+        - in: flower2
+        - out: type_2
+      structure:
+        type: feed-forward
+        layers:
+          # if name of instance `inst` if provided, this is interpreted as
+          # the tensor `[inst[feat1], ..., inst[featN]]` covering the N input features of `inst`
+          in: flower2
+          hidden: [len(features) * 2, len(features)]
+          out: ohe(type_2) # one hot encoding of class attribute
 
 knowledge:
   # only_one_of_3(+x, +c1, +c2, +c3)
@@ -40,4 +52,4 @@ knowledge:
 
 constraints: 
   - forall flower. exists c. (flower[class] = c) <-> Iris(flower, c)
-  - forall flower. Iris(flower, c) and Only_one_of_three(c, setosa, versicolor, virginica)
+  - forall flower2. Iris(flower, c) and Only_one_of_three(c, setosa, versicolor, virginica)

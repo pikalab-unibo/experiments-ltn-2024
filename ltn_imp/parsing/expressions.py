@@ -1,6 +1,30 @@
-class Expression:
-    pass
+def collect_variables(expr):
+    variables = set()
 
+    if isinstance(expr, VariableExpression):
+        variables.add(expr)
+    elif isinstance(expr, BinaryExpression):
+        variables.update(collect_variables(expr.left))
+        variables.update(collect_variables(expr.right))
+    elif isinstance(expr, NegatedExpression):
+        variables.update(collect_variables(expr.term))
+    elif isinstance(expr, NegativeExpression):
+        variables.update(collect_variables(expr.term))
+    elif isinstance(expr, QuantifiedExpression):
+        variables.add(expr.variable)
+        variables.update(collect_variables(expr.term))
+    elif isinstance(expr, ApplicationExpression):
+        for arg in expr.args:
+            variables.update(collect_variables(arg))
+    elif isinstance(expr, IndexExpression):
+        variables.update(collect_variables(expr.variable))
+        variables.update(collect_variables(expr.feature))
+
+    return variables
+
+class Expression:
+    def variables(self):
+        return collect_variables(self)
 class BinaryExpression(Expression):
     def __init__(self, left, operator, right):
         self.left = left
@@ -130,6 +154,14 @@ class VariableExpression(Expression):
     
     def __str__(self):
         return self.variable
+    
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, VariableExpression):
+            return self.variable == value.variable
+        return False
+
+    def __hash__(self) -> int:
+        return hash(self.variable)
 
 class ConstantExpression(Expression):
     def __init__(self, constant):

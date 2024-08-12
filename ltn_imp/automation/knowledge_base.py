@@ -8,12 +8,11 @@ sat_agg_op = SatAgg()
 
 
 class KnowledgeBase:
-    def __init__(self, learning_rules, ancillary_rules, rule_to_data_loader_mapping, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, constant_mapping = {}):
+    def __init__(self, learning_rules, ancillary_rules, rule_to_data_loader_mapping, predicates={},  connective_impls=None, quantifier_impls=None, constant_mapping = {}):
 
         self.learning_rules = learning_rules
         self.ancillary_rules = ancillary_rules
         self.predicates = predicates
-        self.functions = functions
         self.connective_impls = connective_impls
         self.quantifier_impls = quantifier_impls
         self.rule_to_data_loader_mapping = rule_to_data_loader_mapping
@@ -21,7 +20,7 @@ class KnowledgeBase:
         self.declarations = {}
         self.declarers = {}
 
-        self.converter = LTNConverter(predicates=self.predicates, functions=self.functions, connective_impls=self.connective_impls, 
+        self.converter = LTNConverter(predicates=self.predicates, connective_impls=self.connective_impls, 
                                       quantifier_impls=self.quantifier_impls, declarations =  self.declarations, declarers = self.declarers)
         
         self.factory = ModuleFactory(converter=self.converter)
