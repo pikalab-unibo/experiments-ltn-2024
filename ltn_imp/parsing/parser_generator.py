@@ -73,6 +73,9 @@ class FOLSemantics:
     
     def negative(self, ast):
         return NegativeExpression(ast[1])
+    
+    def index(self, ast):
+        return IndexExpression(ast[0], ast[1])
 
 class LTNParser():
     def __init__(self, path):

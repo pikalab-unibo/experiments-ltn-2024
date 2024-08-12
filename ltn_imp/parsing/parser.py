@@ -8,6 +8,7 @@ import torch
 from torchviz import make_dot
 from collections import defaultdict
 from ltn_imp.parsing.parser_generator import LTNParser
+from ltn_imp.parsing.yaml_parsing import parse_yaml
 from ltn_imp.parsing.expressions import *
 import os
 
@@ -52,7 +53,7 @@ class ConvertedExpression:
         return dot
     
 class ExpressionVisitor(Visitor):
-    def __init__(self, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None):
+    def __init__(self, yaml, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None):
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
@@ -61,6 +62,8 @@ class ExpressionVisitor(Visitor):
 
         self.declarations = declarations if declarations is not None else {}
         self.declarers = declarers if declarers is not None else {}
+
+        self.yaml = yaml
 
         And = get_subclass_with_prefix(module=Connectives, superclass=AndConnective, prefix=connective_impls.get('and', 'default'))
         Or = get_subclass_with_prefix(module=Connectives, superclass=OrConnective, prefix=connective_impls.get('or', 'default'))
@@ -233,10 +236,22 @@ class ExpressionVisitor(Visitor):
                 
     def visit_ConstantExpression(self, expression):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_constant(variable_mapping, expression), self)
+    
+    def handle_indexing(self, variable_mapping, expression):
+        feature = expression.feature
+        variable = expression.variable
+        index = [ list(idx.values())[0] for idx in self.yaml["features"][str(variable)] ].index(feature)
 
+        if str(variable) in variable_mapping:
+            return variable_mapping[str(variable)][:, index]
+        else:
+            raise KeyError(f"Variable {variable} not recognized")
+
+    def visit_IndexExpression(self, expression):
+        return ConvertedExpression(expression, lambda variable_mapping: self.handle_indexing(variable_mapping, expression), self)
 
 class LTNConverter:
-    def __init__(self, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
+    def __init__(self,yaml_file = None,  predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
@@ -246,6 +261,7 @@ class LTNConverter:
         self.expression = None
         parser_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fol_parser.ebnf")
         self.parser = LTNParser(parser_path)
+        self.yaml = parse_yaml(yaml_file) if yaml_file is not None else None
 
     def parse(self, expression):
         expression = self.parser.parse(expression)
@@ -257,6 +273,7 @@ class LTNConverter:
     
         self.expression = expression
         visitor = ExpressionVisitor(
+            self.yaml,
             self.predicates, 
             self.functions, 
             connective_impls=self.connective_impls, 

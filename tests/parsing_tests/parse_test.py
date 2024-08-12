@@ -37,7 +37,7 @@ class TestParsing(unittest.TestCase):
         if expected is None: 
             expected = {k: v for k,v in globals().items() if len(k) == 1}
 
-        converter = LTNConverter(predicates, connective_impls=connective_impls, quantifier_impls=quantifier_impls)
+        converter = LTNConverter(predicates=predicates, connective_impls=connective_impls, quantifier_impls=quantifier_impls)
         ltn_expr = converter(expr)
         result = ltn_expr(expected)
         self.assertAlmostEqualTensor(result, value)

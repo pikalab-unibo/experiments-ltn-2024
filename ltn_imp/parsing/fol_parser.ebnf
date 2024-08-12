@@ -57,6 +57,7 @@ exponentiation
 
 primary_expression
     = negation
+    | index
     | negative
     | predicate
     | atom
@@ -126,6 +127,10 @@ negative
     = '-' primary_expression
     ;
 
+index
+    = @:variable '[' @:feature ']'
+    ;
+    
 quantified
     = quantifier variable '.' expression
     ;
@@ -135,7 +140,7 @@ quantifier
     ;
 
 predicate
-    = @:/[A-Z][a-zA-Z0-9]*/ '(' @:variables ')'
+    = @:/[A-Z][a-zA-Z0-9_]*/ '(' @:variables ')'
     ;
 
 variables
@@ -161,3 +166,9 @@ constant
 variable
     = /[a-z][a-z0-9]*/
     ;
+
+feature
+    = /[a-z][a-z0-9]*/
+    | /\d+/       # Matches integers like 1, 42, 123
+    ;
+

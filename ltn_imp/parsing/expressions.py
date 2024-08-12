@@ -137,3 +137,14 @@ class ConstantExpression(Expression):
 
     def __repr__(self):
         return self.constant
+    
+class IndexExpression(Expression):
+    def __init__(self, variable, feature):
+        self.variable = variable
+        self.feature = feature
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}>: {self.variable}[{self.feature}]"
+    
+    def __str__(self):
+        return f"{self.variable}[{self.feature}]"
