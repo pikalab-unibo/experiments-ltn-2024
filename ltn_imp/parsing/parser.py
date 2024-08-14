@@ -281,7 +281,7 @@ class ExpressionVisitor(Visitor):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_indexing(variable_mapping, expression), self)
 
 class LTNConverter:
-    def __init__(self,yaml, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
+    def __init__(self,yaml = None, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
