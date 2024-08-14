@@ -226,7 +226,7 @@ class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0,
 
     def implementation(self, a, b):
         
-        # Ensure a and b have the same shape and are at least 2D tensors
+        # Ensure a and b have the samzaze shape and are at least 2D tensors
         if a.ndim == 0:
             a = a.unsqueeze(0)
         if b.ndim == 0:

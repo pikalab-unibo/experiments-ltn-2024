@@ -20,5 +20,6 @@ predicates:
           out: prob
 
 constraints: 
-- all x. (y == pos -> Classifier(x))
-- all x. (y == neg -> not Classifier(x))
+- all x. ((y == setosa) -> Classifier(x, zero))
+- all x. ((y == virginica) -> Classifier(x, one))
+- all x. ((y == versicolor) -> Classifier(x, two))

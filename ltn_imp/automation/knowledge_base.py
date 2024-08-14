@@ -9,7 +9,7 @@ import yaml
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file, predicates=None, loaders=None, constatnt_mapping=None):
+    def __init__(self, yaml_file, predicates=None, loaders=None, constant_mapping=None):
         with open(yaml_file, "r") as file:
             config = yaml.safe_load(file)
         self.config = config
@@ -22,7 +22,7 @@ class KnowledgeBase:
         self.set_loaders()
         self.loaders = loaders # TODO: Placeholder
         self.set_rule_to_data_loader_mapping()
-        self.constant_mapping = constatnt_mapping  # TODO: Placeholder
+        self.constant_mapping = constant_mapping  # TODO: Placeholder
 
     def set_predicates(self):
         predicates_config = self.config["predicates"]

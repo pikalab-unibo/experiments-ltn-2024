@@ -8,7 +8,7 @@ features:
     - out: class
 
 predicates:
-    Classifier:
+    Regressor:
       args:
         - in: x
         - out: prob
@@ -20,5 +20,4 @@ predicates:
           out: prob
 
 constraints: 
-- all x. (y == pos -> Classifier(x))
-- all x. (y == neg -> not Classifier(x))
+- "forall x. (y = Regressor(x))"
