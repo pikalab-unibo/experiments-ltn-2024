@@ -17,7 +17,7 @@ class LoaderWrapper:
         return len(self.loader)
     
     def __repr__(self) -> str:
-        return f"<Loader>: {self.variables} -> {self.targets}"
+        return f" <Loader>:({self.variables} -> {self.targets})"
     
 class CombinedDataLoader:
     def __init__(self, loaders):

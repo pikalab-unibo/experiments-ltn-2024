@@ -5,47 +5,13 @@ class ModuleFactory:
 
     def __init__(self, converter):
         self.converter = converter
-
-    def get_name(self, expression):
-        expression = self.converter.parse(expression)
-        
-        while hasattr(expression, 'term'):
-            expression = expression.term
-
-        if hasattr(expression, 'left'):
-            expression = expression.left
-            
-        while hasattr(expression, 'function'):
-            expression = expression.function
-
-        return str(expression)
-
-    def get_params(self, expression):
-
-        expression = self.converter.parse(expression)
-
-        while hasattr(expression, 'term'):
-            expression = expression.term
-        
-        if hasattr(expression, 'left'):
-            expression = expression.left
-        
-        return [str(arg) for arg in expression.args]
     
     def get_functionality(self, expression):
-
         expression = self.converter.parse(expression)
+        return self.converter(str(expression)) 
 
-        while hasattr(expression, 'term'):
-            expression = expression.term
-
-        return self.converter(str(expression.right)) 
-
-    def create_module(self, expression):
-
-        function_name = self.get_name(expression)
-        params = self.get_params(expression)
-        functionality = self.get_functionality(expression)
+    def create_module(self, name, params, functionality):
+        functionality = self.get_functionality(functionality)
         
         # Define the forward method dynamically
         def forward(self, *args):
@@ -64,11 +30,11 @@ class ModuleFactory:
             return self.forward(*args)
         
         # Create a new class with the dynamically defined forward method
-        module_class = type(str(function_name), (nn.Module,), {
+        module_class = type(str(name), (nn.Module,), {
             'forward': forward,
             '__call__': __call__
         })
         
-        self.converter.predicates[function_name] = module_class()
+        self.converter.predicates[name] = module_class()
 
         return module_class

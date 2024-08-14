@@ -41,15 +41,15 @@ predicates:
           out: ohe(type_2) # one hot encoding of class attribute
 
 knowledge:
-  # only_one_of_3(+x, +c1, +c2, +c3)
-  - predicate: only_one_of_3
-    args: 
-      in: [x, c1, c3, c3]
-    if: 
-      - x = c1 <-> not (flower = c2 or flower = c3)
-      - x = c2 <-> not (flower = c1 or flower = c3)
-      - x = c3 <-> not (flower = c1 or flower = c2)
+  - rule: Only_one_of_3
+    args: [x, c1, c2, c3]
+    clause: x = c1 <-> not (flower = c2 or flower = c3) and x = c2 <-> not (flower = c1 or flower = c3) and x = c3 <-> not (flower = c1 or flower = c2)
+
+  - rule: Only_one_of_2
+    args: [x, c1, c2, c3]
+    clause: x = c1 <-> not (flower = c2 or flower = c3) and x = c2 <-> not (flower = c1 or flower = c3) and x = c3 <-> not (flower = c1 or flower = c2)
+ 
 
 constraints: 
   - forall flower. exists c. (flower[class] = c) <-> Iris(flower, c)
-  - forall flower2. Iris(flower, c) and Only_one_of_three(c, setosa, versicolor, virginica)
+  - forall flower2. Iris(flower, c) and Only_one_of_3(c, setosa, versicolor, virginica)

@@ -8,7 +8,6 @@ import torch
 from torchviz import make_dot
 from collections import defaultdict
 from ltn_imp.parsing.parser_generator import LTNParser
-from ltn_imp.parsing.yaml_parsing import parse_yaml
 from ltn_imp.parsing.expressions import *
 import os
 
@@ -29,6 +28,34 @@ class ConvertedExpression:
         self.converted = converted
         self.visitor = visitor
 
+        if hasattr(self.expression, "left"):
+            self.left = expression.left
+
+        if hasattr(self.expression, "right"):
+            self.right = expression.right
+
+        if hasattr(self.expression, "term"):
+            self.term = expression.term
+
+        if hasattr(self.expression, "variable"):
+            self.variable = expression.variable
+
+        if hasattr(self.expression, "constant"):
+            self.constant = expression.constant
+
+        if hasattr(self.expression, "function"):
+            self.function = expression.function
+
+        if hasattr(self.expression, "quantifier"):
+            self.quantifier = expression.quantifier
+
+        if hasattr(self.expression, "feature"):
+            self.feature = expression.feature
+
+        if hasattr(self.expression, "args"):
+            self.args = expression.args
+
+
     def __call__(self, *args, **kwargs):
         try:
             return self.converted(*args, **kwargs)
@@ -38,6 +65,9 @@ class ConvertedExpression:
         
     def __str__(self):
         return str(self.expression)
+    
+    def __repr__(self):
+        return f"{self.expression}"
 
     def comp_graph(self, var_mapping):
         # Get the final result
@@ -251,7 +281,7 @@ class ExpressionVisitor(Visitor):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_indexing(variable_mapping, expression), self)
 
 class LTNConverter:
-    def __init__(self,yaml_file = None,  predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
+    def __init__(self,yaml, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
@@ -261,7 +291,7 @@ class LTNConverter:
         self.expression = None
         parser_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fol_parser.ebnf")
         self.parser = LTNParser(parser_path)
-        self.yaml = parse_yaml(yaml_file) if yaml_file is not None else None
+        self.yaml = yaml
 
     def parse(self, expression):
         expression = self.parser.parse(expression)
