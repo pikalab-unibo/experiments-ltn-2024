@@ -25,6 +25,8 @@ def collect_variables(expr):
 class Expression:
     def variables(self):
         return collect_variables(self)
+    
+    
 class BinaryExpression(Expression):
     def __init__(self, left, operator, right):
         self.left = left

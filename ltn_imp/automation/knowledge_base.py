@@ -9,31 +9,41 @@ import yaml
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file):
+    def __init__(self, yaml_file, predicates=None, loaders=None, constatnt_mapping=None):
         with open(yaml_file, "r") as file:
             config = yaml.safe_load(file)
         self.config = config
         
-        self._predicates = None
-        self._loaders = None
-        self._rule_to_data_loader_mapping = None
-        self.rules = None
-        
         self.set_predicates()
-        self.converter = LTNConverter(yaml=self.config, predicates=self._predicates)
-        self.set_loaders()
-        self.set_rule_to_data_loader_mapping()
-        self.set_ancillary_rules()
+        self.predicates = predicates  # TODO: Placeholder
+        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates)
         self.set_rules()
+        self.set_ancillary_rules()
+        self.set_loaders()
+        self.loaders = loaders # TODO: Placeholder
+        self.set_rule_to_data_loader_mapping()
+        self.constant_mapping = constatnt_mapping  # TODO: Placeholder
 
     def set_predicates(self):
         predicates_config = self.config["predicates"]
         predicate_names = list(predicates_config.keys())
-        self._predicates = {pred: ... for pred in predicate_names}  # Initialize the neural networks or other logic
+        self.predicates = {pred: ... for pred in predicate_names}  # TODO: Not implemented yet
+
+    def set_rules(self):
+        self.rules = [ self.converter(rule) for rule in self.config["constraints"]]
+
+    def set_ancillary_rules(self):
+        if "knowledge" not in self.config:
+            return
+        for anchor in self.config["knowledge"]:
+            name = anchor["rule"]
+            params = anchor["args"]
+            functionality = anchor["clause"]
+            ModuleFactory(self.converter).create_module(name, params, functionality)
 
     def set_loaders(self):
         loaders = []
-        for pred in self._predicates.keys():
+        for pred in self.predicates.keys():
             args = self.config["predicates"][pred]["args"]
             values = [list(arg.values())[0] for arg in args]
             keys = [list(arg.keys())[0] for arg in args]
@@ -47,18 +57,17 @@ class KnowledgeBase:
                 else:
                     targets.append(v)
 
-            # Initialize LoaderWrapper with the appropriate logic
-            loaders.append(LoaderWrapper(loader=..., variables=variables, targets=targets))
+            loaders.append(LoaderWrapper(loader=..., variables=variables, targets=targets)) # TODO: Not implemented yet
 
-        self._loaders = loaders
+        self.loaders = loaders
 
     def set_rule_to_data_loader_mapping(self):
         rule_to_loader_mapping = {}
 
-        for rule in self.config["constraints"]:
-            variables = self.converter.parse(rule).variables()
+        for rule in self.rules:
+            variables = rule.variables()
             for v in variables:
-                for loader in self._loaders:
+                for loader in self.loaders:
                     if str(v) in loader.variables or str(v) in loader.targets:
                         if rule in rule_to_loader_mapping:
                             rule_to_loader_mapping[rule].append(loader)
@@ -66,16 +75,6 @@ class KnowledgeBase:
                             rule_to_loader_mapping[rule] = [loader]
 
         self.rule_to_data_loader_mapping = rule_to_loader_mapping
-
-    def set_ancillary_rules(self):
-        for anchor in self.config["knowledge"]:
-            name = anchor["rule"]
-            params = anchor["args"]
-            functionality = anchor["clause"]
-            ModuleFactory(self.converter).create_module(name, params, functionality)
-
-    def set_rules(self):
-        self.rules = [ self.converter(rule) for rule in self.config["constraints"]]
     
     def loss(self, rule_outputs):
         # Compute satisfaction level

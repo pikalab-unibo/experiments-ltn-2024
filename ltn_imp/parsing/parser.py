@@ -55,6 +55,9 @@ class ConvertedExpression:
         if hasattr(self.expression, "args"):
             self.args = expression.args
 
+        if hasattr(self.expression, "variables"):
+            self.variables = expression.variables
+
 
     def __call__(self, *args, **kwargs):
         try:
@@ -105,7 +108,7 @@ class ExpressionVisitor(Visitor):
         Eq_Classification = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_class', 'tan'))        
 
         Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
-        Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'min'))
+        Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'pmean_error'))
 
         Add = get_subclass_with_prefix(module=Connectives, superclass=AddConnective, prefix=functions.get('add', 'default'))
         Subtract = get_subclass_with_prefix(module=Connectives, superclass=SubtractConnective, prefix=functions.get('sub', 'default'))
