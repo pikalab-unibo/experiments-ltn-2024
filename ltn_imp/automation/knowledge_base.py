@@ -3,19 +3,20 @@ from ltn_imp.fuzzy_operators.aggregators import SatAgg
 from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper
 from ltn_imp.parsing.parser import LTNConverter
 from ltn_imp.parsing.ancillary_modules import ModuleFactory
+from ltn_imp.automation.network_factory import NNFactory
 import yaml
 
 
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file, predicates=None, loaders=None, constant_mapping=None):
+    def __init__(self, yaml_file, loaders=None, constant_mapping=None):
         with open(yaml_file, "r") as file:
             config = yaml.safe_load(file)
         self.config = config
-        
+        self.factory = NNFactory()
+
         self.set_predicates()
-        self.predicates = predicates  # TODO: Placeholder
         self.converter = LTNConverter(yaml=self.config, predicates=self.predicates)
         self.set_rules()
         self.set_ancillary_rules()
@@ -24,10 +25,42 @@ class KnowledgeBase:
         self.set_rule_to_data_loader_mapping()
         self.constant_mapping = constant_mapping  # TODO: Placeholder
 
+
+    def evaluate_layer_size(self, layer_size, features_dict, instance_name):
+        in_size_str, out_size_str = layer_size
+        feature_count = len(features_dict[instance_name])
+        in_size = eval(in_size_str.replace('x', str(feature_count)))
+        out_size = eval(out_size_str.replace('x', str(feature_count)))
+        return in_size, out_size
+
     def set_predicates(self):
-        predicates_config = self.config["predicates"]
-        predicate_names = list(predicates_config.keys())
-        self.predicates = {pred: ... for pred in predicate_names}  # TODO: Not implemented yet
+        features = self.config["features"]
+        self.predicates = {}
+
+        for predicate_name, predicate_info in self.config["predicates"].items():
+            args = predicate_info["args"]
+            structure = predicate_info["structure"]
+
+            instance_name = args[0]['in']
+            layers = []
+            activations = []
+
+            for layer in structure['layers']:
+                layer_type = list(layer.keys())[0]  # E.g., 'in', 'hidden', 'out'
+                layer_size = layer[layer_type]
+                activation = layer.get('activation', None)
+                in_size, out_size = self.evaluate_layer_size(layer_size, features, instance_name)
+                layers.append((in_size,out_size))
+                activations.append(activation)
+                
+            # Create the network using the NNFactory
+            network = self.factory(
+                layers = layers,
+                activations=activations
+            )
+
+            # Store the network in the predicates dictionary
+            self.predicates[predicate_name] = network
 
     def set_rules(self):
         self.rules = [ self.converter(rule) for rule in self.config["constraints"]]

@@ -1,24 +1,29 @@
-instance:
+instances:
   - x
 
 features:
   x:
     - in: feature1
     - in: feature2
-    - out: class
+
+constants:
+  - pos
+  - neg
 
 predicates:
-    Classifier:
-      args:
-        - in: x
-        - out: prob
-      structure:
-        type: feed-forward
-        layers:
-          in: x 
-          hidden: [hidden_layer_1, hidden_layer_2]
-          out: prob
-
+  Classifier:
+    args:
+      - in: x
+    structure:
+      type: feed-forward
+      layers:
+        - in: [x, 8 * x]
+          activation: elu
+        - hidden: [8 * x, 8 * x]
+          activation: elu
+        - out: [ 8 * x, '1']
+          activation: sigmoid  
+          
 constraints: 
-- all x. (y == pos -> Classifier(x))
-- all x. (y == neg -> not Classifier(x))
+  - all x. (y == pos -> Classifier(x))
+  - all x. (y == neg -> not Classifier(x))
