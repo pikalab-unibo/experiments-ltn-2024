@@ -10,12 +10,13 @@ import yaml
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file, loaders=None, constant_mapping=None):
+    def __init__(self, yaml_file, loaders=None):
         with open(yaml_file, "r") as file:
             config = yaml.safe_load(file)
         self.config = config
         self.factory = NNFactory()
 
+        self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
         self.converter = LTNConverter(yaml=self.config, predicates=self.predicates)
         self.set_rules()
@@ -23,14 +24,17 @@ class KnowledgeBase:
         self.set_loaders()
         self.loaders = loaders # TODO: Placeholder
         self.set_rule_to_data_loader_mapping()
-        self.constant_mapping = constant_mapping  # TODO: Placeholder
 
+    def set_constant_mapping(self):
+        constants = self.config.get("constants", [])
+        constant_mapping = {name: torch.tensor([value], dtype=torch.float32) for const in constants for name, value in const.items()}
+        return constant_mapping
 
     def evaluate_layer_size(self, layer_size, features_dict, instance_name):
         in_size_str, out_size_str = layer_size
         feature_count = len(features_dict[instance_name])
-        in_size = eval(in_size_str.replace('x', str(feature_count)))
-        out_size = eval(out_size_str.replace('x', str(feature_count)))
+        in_size = eval(in_size_str.replace(instance_name, str(feature_count))) if type(in_size_str) == str else in_size_str
+        out_size = eval(out_size_str.replace(instance_name, str(feature_count))) if type(out_size_str) == str else out_size_str
         return in_size, out_size
 
     def set_predicates(self):
