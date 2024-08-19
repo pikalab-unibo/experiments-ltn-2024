@@ -7,8 +7,7 @@ class ModuleFactory:
         self.converter = converter
     
     def get_functionality(self, expression):
-        expression = self.converter.parse(expression)
-        return self.converter(str(expression)) 
+        return self.converter(expression)
 
     def create_module(self, name, params, functionality):
         functionality = self.get_functionality(functionality)
@@ -23,7 +22,9 @@ class ModuleFactory:
                      [inspect.Parameter(param, inspect.Parameter.POSITIONAL_OR_KEYWORD) for param in params]
         
         new_sig = inspect.Signature(parameters=new_params)
-        
+        print(new_sig)
+        print(params)
+
         forward.__signature__ = new_sig
 
         def __call__(self, *args):

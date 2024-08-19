@@ -256,7 +256,8 @@ class ExpressionVisitor(Visitor):
         elif str(var) in self.declarations:
             return self.declarations[str(var)]
         else:
-            raise KeyError(f"Variable {var} not recognized")
+            print(variable_mapping)
+            raise KeyError(f"Variable {var} is not recognized")
     
     def visit_VariableExpression(self, expression):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_variable(variable_mapping, expression), self)

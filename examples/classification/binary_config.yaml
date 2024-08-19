@@ -1,10 +1,20 @@
 instances:
   - x
+  - y
 
 features:
   x:
-    - in: feature1
-    - in: feature2
+    - 0
+    - 1
+  y:
+    - 2
+
+data:
+  binary:
+    instances: [x]
+    targets: [y]
+    path: datasets/binary.csv
+    batch_size: 32
 
 constants:
   - pos : 1

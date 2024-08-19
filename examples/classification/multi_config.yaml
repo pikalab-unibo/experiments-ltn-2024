@@ -1,25 +1,48 @@
 instance:
-  - x
+  - flower
+  - prob 
 
 features:
-  x:
+  flower:
     - in: feature1
     - in: feature2
-    - out: class
+    - in: feature3
+    - in: feature4
+  prob:
+  - in: zero
+  - in: one
+  - in: two
+
+constants:
+  - setosa : 0
+  - versicolor : 1
+  - virginica : 2
+  - zero : [1,0,0]
+  - one : [0,1,0]
+  - two: [0,0,1]
 
 predicates:
-    Classifier:
-      args:
-        - in: x
-        - out: prob
-      structure:
-        type: feed-forward
-        layers:
-          in: x 
-          hidden: [hidden_layer_1, hidden_layer_2]
-          out: prob
+  Iris:
+    args:
+      - in: flower
+    structure:
+      type: feed-forward
+      layers:
+        - in: [flower, 4 * flower]
+          activation: elu
+        - hidden: [4 * flower, 4 * flower]
+          activation: elu
+        - hidden: [4 * flower, 2 * flower]
+          activation: elu
+        - out: [ 2 * flower, 3]
+          activation: softmax 
+
+knowledge:
+  - rule: Classifier
+    args: [flower, c]
+    clause: ((c == zero) -> (Iris(flower, prob) and prob[zero]))  and ((c == one) -> (Iris(flower, prob) and prob[one])) and ((c == two) -> (Iris(flower, prob) and prob[two]))
 
 constraints: 
-- all x. ((y == setosa) -> Classifier(x, zero))
-- all x. ((y == virginica) -> Classifier(x, one))
-- all x. ((y == versicolor) -> Classifier(x, two))
+- all flower. ((y == setosa) -> Classifier(flower, zero))
+- all flower. ((y == virginica) -> Classifier(flower, one))
+- all flower. ((y == versicolor) -> Classifier(flower, two))

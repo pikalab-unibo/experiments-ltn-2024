@@ -1,23 +1,57 @@
 from itertools import cycle
+from torch.utils.data import Dataset, DataLoader
+import pandas as pd
+import torch
+import numpy as np
 
+class DynamicDataset(Dataset):
+    def __init__(self, config, features):
+        self.config = config
+        self.features = features
+        self.data = pd.read_csv(config["path"], index_col=0)
+        self.batch_size = config["batch_size"]
+        
+        self.instance_features = {instance: [str(feat) for feat in features[instance]] for instance in config["instances"]}
+        self.target_features = {target: [str(feat) for feat in features[target]] for target in config["targets"]}
 
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        batch = []
+
+        # Get instance data
+        for instance in self.config["instances"]:
+            instance_data = self.data[self.instance_features[instance]].iloc[idx]
+            batch.append(instance_data.values)
+
+        # Get target data
+        for target in self.config["targets"]:
+            target_data = self.data[self.target_features[target]].iloc[idx]
+            batch.append(target_data.values)
+
+        # Convert to tensors
+        batch = [torch.tensor(item, dtype=torch.float32) for item in batch]
+        
+        return tuple(batch)
 class LoaderWrapper:
-    def __init__(self, variables, targets, loader):
-        self.variables = variables
-        self.targets = targets
-        self.loader = loader 
+    def __init__(self, config, features):
+        self.variables = config["instances"]
+        self.targets = config["targets"]
+        self.loader = DataLoader(DynamicDataset(config, features), batch_size=config["batch_size"], shuffle=True)
 
     def __iter__(self):
+        self.iter_loader = iter(self.loader)
         return self
     
     def __next__(self):
-        return next(iter(self.loader))
+        return next(self.iter_loader)
     
     def __len__(self):
         return len(self.loader)
     
     def __repr__(self) -> str:
-        return f" <Loader>:({self.variables} -> {self.targets})"
+        return f"<Loader>:({self.variables} -> {self.targets})"
     
 class CombinedDataLoader:
     def __init__(self, loaders):

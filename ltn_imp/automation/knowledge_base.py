@@ -1,11 +1,10 @@
 import torch 
 from ltn_imp.fuzzy_operators.aggregators import SatAgg
-from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper
+from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper, DynamicDataset
 from ltn_imp.parsing.parser import LTNConverter
 from ltn_imp.parsing.ancillary_modules import ModuleFactory
 from ltn_imp.automation.network_factory import NNFactory
 import yaml
-
 
 sat_agg_op = SatAgg()
 
@@ -16,18 +15,25 @@ class KnowledgeBase:
         self.config = config
         self.factory = NNFactory()
 
+        self.set_loaders()
         self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
         self.converter = LTNConverter(yaml=self.config, predicates=self.predicates)
-        self.set_rules()
         self.set_ancillary_rules()
-        self.set_loaders()
-        self.loaders = loaders # TODO: Placeholder
+        self.set_rules()
         self.set_rule_to_data_loader_mapping()
 
     def set_constant_mapping(self):
         constants = self.config.get("constants", [])
-        constant_mapping = {name: torch.tensor([value], dtype=torch.float32) for const in constants for name, value in const.items()}
+        constant_mapping = {}
+        for const in constants:
+            for name, value in const.items():
+                # Check if the value is a list or a scalar
+                if isinstance(value, list):
+                    constant_mapping[name] = torch.tensor(value, dtype=torch.float32)
+                else:
+                    constant_mapping[name] = torch.tensor([value], dtype=torch.float32)
+
         return constant_mapping
 
     def evaluate_layer_size(self, layer_size, features_dict, instance_name):
@@ -64,7 +70,7 @@ class KnowledgeBase:
             )
 
             # Store the network in the predicates dictionary
-            self.predicates[predicate_name] = network
+            self.predicates[predicate_name] = network.float()
 
     def set_rules(self):
         self.rules = [ self.converter(rule) for rule in self.config["constraints"]]
@@ -79,25 +85,13 @@ class KnowledgeBase:
             ModuleFactory(self.converter).create_module(name, params, functionality)
 
     def set_loaders(self):
-        loaders = []
-        for pred in self.predicates.keys():
-            args = self.config["predicates"][pred]["args"]
-            values = [list(arg.values())[0] for arg in args]
-            keys = [list(arg.keys())[0] for arg in args]
-
-            variables = []
-            targets = []
-
-            for k, v in zip(keys, values):
-                if k == "in":
-                    variables.append(v)
-                else:
-                    targets.append(v)
-
-            loaders.append(LoaderWrapper(loader=..., variables=variables, targets=targets)) # TODO: Not implemented yet
-
-        self.loaders = loaders
-
+        self.loaders = []
+        features = self.config["features"]
+        for dataset in self.config["data"]:
+            dataset = self.config["data"][dataset]
+            loader = LoaderWrapper(dataset, features)
+            self.loaders.append(loader)
+        
     def set_rule_to_data_loader_mapping(self):
         rule_to_loader_mapping = {}
 
@@ -145,6 +139,7 @@ class KnowledgeBase:
         # Add Targets ( Output Data )
         for i, target in enumerate(loader.targets):
             var_mapping[target] = batch[i + len(loader.variables)]
+        
 
     def optimize(self, num_epochs=10, log_steps=10, lr=0.001):
 
