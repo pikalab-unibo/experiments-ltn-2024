@@ -1,23 +1,37 @@
-instance:
+instances:
   - x
+  - y
 
 features:
   x:
-    - in: feature1
-    - in: feature2
-    - out: class
+    - X1 transaction date
+    - X2 house age
+    - X3 distance to the nearest MRT station
+    - X4 number of convenience stores
+    - X5 latitude
+    - X6 longitude
+  y:
+    - Y house price of unit area
+
+data:
+  regression:
+    instances: [x]
+    targets: [y]
+    path: datasets/real_estate.csv
+    batch_size: 32
 
 predicates:
-    Regressor:
-      args:
-        - in: x
-        - out: prob
-      structure:
-        type: feed-forward
-        layers:
-          in: x 
-          hidden: [hidden_layer_1, hidden_layer_2]
-          out: prob
+  Regressor:
+    args: [x]
+    structure:
+      type: feed-forward
+      layers:
+        - input: [x, 8]
+          activation: elu
+        - hidden: [8, 8]
+          activation: elu
+        - out: [8, 1]
+          activation: elu
 
 constraints: 
 - "forall x. (y = Regressor(x))"

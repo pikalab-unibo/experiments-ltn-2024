@@ -36,11 +36,18 @@ class KnowledgeBase:
 
         return constant_mapping
 
-    def evaluate_layer_size(self, layer_size, features_dict, instance_name):
+    def evaluate_layer_size(self, layer_size, features_dict, instance_names):
         in_size_str, out_size_str = layer_size
-        feature_count = len(features_dict[instance_name])
-        in_size = eval(in_size_str.replace(instance_name, str(feature_count))) if type(in_size_str) == str else in_size_str
-        out_size = eval(out_size_str.replace(instance_name, str(feature_count))) if type(out_size_str) == str else out_size_str
+        # Replace all occurrences of each instance name with its length
+        for instance_name in instance_names:
+            feature_count = len(features_dict[instance_name])
+            if isinstance(in_size_str, str):
+                in_size_str = in_size_str.replace(instance_name, str(feature_count))
+            if isinstance(out_size_str, str):
+                out_size_str = out_size_str.replace(instance_name, str(feature_count))
+
+        in_size = eval(in_size_str) if isinstance(in_size_str, str) else in_size_str
+        out_size = eval(out_size_str) if isinstance(out_size_str, str) else out_size_str
         return in_size, out_size
 
     def set_predicates(self):
@@ -50,8 +57,7 @@ class KnowledgeBase:
         for predicate_name, predicate_info in self.config["predicates"].items():
             args = predicate_info["args"]
             structure = predicate_info["structure"]
-
-            instance_name = args[0]['in']
+            
             layers = []
             activations = []
 
@@ -59,13 +65,13 @@ class KnowledgeBase:
                 layer_type = list(layer.keys())[0]  # E.g., 'in', 'hidden', 'out'
                 layer_size = layer[layer_type]
                 activation = layer.get('activation', None)
-                in_size, out_size = self.evaluate_layer_size(layer_size, features, instance_name)
-                layers.append((in_size,out_size))
+                in_size, out_size = self.evaluate_layer_size(layer_size, features, args)
+                layers.append((in_size, out_size))
                 activations.append(activation)
-                
+
             # Create the network using the NNFactory
             network = self.factory(
-                layers = layers,
+                layers=layers,
                 activations=activations
             )
 

@@ -22,8 +22,7 @@ constants:
 
 predicates:
   Classifier:
-    args:
-      - in: x
+    args: [x]
     structure:
       type: feed-forward
       layers:
