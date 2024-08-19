@@ -18,7 +18,7 @@ data:
     instances: [x]
     targets: [y]
     path: datasets/real_estate.csv
-    batch_size: 32
+    batch_size: 64
 
 predicates:
   Regressor:
