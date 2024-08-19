@@ -164,6 +164,7 @@ class ExpressionVisitor(Visitor):
 
             if var in var_mapping:
                 inputs.append(var_mapping[var])
+                
             elif var in self.declarations:
                 if self.declarers[var] == str(expression):
                     to_be_declared = variables[i:]
@@ -182,7 +183,7 @@ class ExpressionVisitor(Visitor):
             
         if to_be_declared is not None:
             for i, var in enumerate(to_be_declared):
-                value = results[i]
+                value = results[i] if len(to_be_declared) > 1 else results
                 self.declarations[str(var)] = value
                 self.declarers[str(var)] = str(expression)
                 
@@ -256,7 +257,6 @@ class ExpressionVisitor(Visitor):
         elif str(var) in self.declarations:
             return self.declarations[str(var)]
         else:
-            print(variable_mapping)
             raise KeyError(f"Variable {var} is not recognized")
     
     def visit_VariableExpression(self, expression):
@@ -274,12 +274,16 @@ class ExpressionVisitor(Visitor):
     def handle_indexing(self, variable_mapping, expression):
         feature = expression.feature
         variable = expression.variable
-        index = [ list(idx.values())[0] for idx in self.yaml["features"][str(variable)] ].index(feature)
 
         if str(variable) in variable_mapping:
-            return variable_mapping[str(variable)][:, index]
+            index = [ list(idx.values())[0] for idx in self.yaml["features"][str(variable)] ].index(feature)
+            return self.visit(variable)(variable_mapping)[:, index]
         else:
-            raise KeyError(f"Variable {variable} not recognized")
+            if str(feature).isdigit():
+                feature = int(feature)
+                return self.visit(variable)(variable_mapping)[:, feature]
+            else:
+                raise KeyError(f"Variable {variable} not recognized")
 
     def visit_IndexExpression(self, expression):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_indexing(variable_mapping, expression), self)

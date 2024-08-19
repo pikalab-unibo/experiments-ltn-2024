@@ -1,6 +1,6 @@
 instance:
   - flower
-  - class 
+  - species 
 
 features:
   flower:
@@ -8,13 +8,13 @@ features:
     - sepal_width
     - petal_length
     - petal_width
-  class:
+  species:
     - species
 
 data:
   multi:
     instances: [flower]
-    targets: [class]
+    targets: [species]
     path: datasets/iris_training.csv
     batch_size: 32
 
@@ -22,9 +22,6 @@ constants:
   - setosa : 0
   - versicolor : 1
   - virginica : 2
-  - zero : [1,0,0]
-  - one : [0,1,0]
-  - two: [0,0,1]
 
 predicates:
   Iris:
@@ -42,6 +39,6 @@ predicates:
           activation: softmax 
 
 constraints: 
-- all flower. ((y == setosa) -> Iris(flower, zero))
-- all flower. ((y == virginica) -> Iris(flower, one))
-- all flower. ((y == versicolor) -> Iris(flower, two))
+- all flower. ((species == setosa) -> Iris(flower, output) and output[0])
+- all flower. ((species == versicolor) -> Iris(flower, output) and output[1])
+- all flower. ((species == virginica) -> Iris(flower, output) and output[2])

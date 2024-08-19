@@ -145,6 +145,7 @@ class KnowledgeBase:
         # Add Targets ( Output Data )
         for i, target in enumerate(loader.targets):
             var_mapping[target] = batch[i + len(loader.variables)]
+            
         
 
     def optimize(self, num_epochs=10, log_steps=10, lr=0.001):
