@@ -1,17 +1,22 @@
 instance:
   - flower
-  - prob 
+  - class 
 
 features:
   flower:
-    - in: feature1
-    - in: feature2
-    - in: feature3
-    - in: feature4
-  prob:
-  - in: zero
-  - in: one
-  - in: two
+    - sepal_length
+    - sepal_width
+    - petal_length
+    - petal_width
+  class:
+    - species
+
+data:
+  multi:
+    instances: [flower]
+    targets: [class]
+    path: datasets/iris_training.csv
+    batch_size: 32
 
 constants:
   - setosa : 0
@@ -23,8 +28,7 @@ constants:
 
 predicates:
   Iris:
-    args:
-      - in: flower
+    args: [flower]
     structure:
       type: feed-forward
       layers:
@@ -37,12 +41,7 @@ predicates:
         - out: [ 2 * flower, 3]
           activation: softmax 
 
-knowledge:
-  - rule: Classifier
-    args: [flower, c]
-    clause: ((c == zero) -> (Iris(flower, prob) and prob[zero]))  and ((c == one) -> (Iris(flower, prob) and prob[one])) and ((c == two) -> (Iris(flower, prob) and prob[two]))
-
 constraints: 
-- all flower. ((y == setosa) -> Classifier(flower, zero))
-- all flower. ((y == virginica) -> Classifier(flower, one))
-- all flower. ((y == versicolor) -> Classifier(flower, two))
+- all flower. ((y == setosa) -> Iris(flower, zero))
+- all flower. ((y == virginica) -> Iris(flower, one))
+- all flower. ((y == versicolor) -> Iris(flower, two))

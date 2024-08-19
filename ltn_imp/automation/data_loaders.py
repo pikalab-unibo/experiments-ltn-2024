@@ -14,6 +14,9 @@ class DynamicDataset(Dataset):
         self.instance_features = {instance: [str(feat) for feat in features[instance]] for instance in config["instances"]}
         self.target_features = {target: [str(feat) for feat in features[target]] for target in config["targets"]}
 
+        if any(self.data.index.name in self.instance_features[instance] for instance in self.config["instances"]):
+            self.data = pd.read_csv(config["path"])
+            
     def __len__(self):
         return len(self.data)
     

@@ -36,11 +36,13 @@ scikit-learn = "^1.5.0"
 poethepoet = "^0.27.0"
 
 [tool.poe.tasks]
-create-dataset-dir = { shell = "mkdir -p examples/datasets" }
+create-reg-dataset-dir = { shell = "mkdir -p examples/classification/datasets" }
+create-class-dataset-dir = { shell = "mkdir -p examples/regression/datasets" }
 download-iris-training = { shell = "curl -L -o examples/classification/datasets/iris_training.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/iris_training.csv" }
 download-iris-test = { shell = "curl -L -o examples/classification/datasets/iris_test.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/iris_test.csv" }
 download-real_estate = { shell = "curl -L -o examples/regression/datasets/real_estate.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/real-estate.csv" }
-download-datasets = { sequence = ["create-dataset-dir", "download-iris-training", "download-iris-test", "download-real_estate"] }
+download-class-datasets = { sequence = ["create-class-dataset-dir", "download-iris-training", "download-iris-test"] }
+download-reg-datasets = { sequence = ["create-reg-dataset-dir", "download-real_estate"] }
 
 [[tool.poetry.source]]
 name = "PyPI"
