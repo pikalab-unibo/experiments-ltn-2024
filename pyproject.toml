@@ -38,11 +38,16 @@ poethepoet = "^0.27.0"
 [tool.poe.tasks]
 create-reg-dataset-dir = { shell = "mkdir -p examples/classification/datasets" }
 create-class-dataset-dir = { shell = "mkdir -p examples/regression/datasets" }
+create-medical-dataset-dir = { shell = "mkdir -p examples/medical/datasets" }
+
+download-real_estate = { shell = "curl -L -o examples/regression/datasets/real_estate.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/real-estate.csv" }
 download-iris-training = { shell = "curl -L -o examples/classification/datasets/iris_training.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/iris_training.csv" }
 download-iris-test = { shell = "curl -L -o examples/classification/datasets/iris_test.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/iris_test.csv" }
-download-real_estate = { shell = "curl -L -o examples/regression/datasets/real_estate.csv https://raw.githubusercontent.com/tommasocarraro/LTNtorch/main/examples/datasets/real-estate.csv" }
+download-medical = { shell = "curl -L -o examples/medical/datasets/pima_indians_imputed.csv https://raw.githubusercontent.com/ChristelSirocchi/hybrid-ML/main/pima_indians_imputed.csv" }
+
 download-class-datasets = { sequence = ["create-class-dataset-dir", "download-iris-training", "download-iris-test"] }
 download-reg-datasets = { sequence = ["create-reg-dataset-dir", "download-real_estate"] }
+download-medical-datasets =  { sequence = ["create-medical-dataset-dir", "download-medical"] }
 
 [[tool.poetry.source]]
 name = "PyPI"

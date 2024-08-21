@@ -168,7 +168,7 @@ variable
     ;
 
 feature
-    = /[a-z][a-z0-9]*/
-    | /\d+/       # Matches integers like 1, 42, 123
+    = /[a-zA-Z][a-zA-Z0-9]*/  # Matches lowercase, uppercase, and alphanumeric strings
+    | /\d+/                   # Matches integers like 1, 42, 123
     ;
 

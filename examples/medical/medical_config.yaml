@@ -1,0 +1,44 @@
+instances:
+  - person
+  - y
+
+features:
+  person:
+    - Pregnancies
+    - Glucose
+    - BloodPressure
+    - SkinThickness
+    - Insulin
+    - BMI
+    - DiabetesPedigreeFunction
+    - Age
+  y:
+    - Outcome
+
+data:
+  binary:
+    instances: [person]
+    targets: [y]
+    path: datasets/pima_indians_imputed.csv
+    batch_size: 128
+
+constants:
+  - diabetes : 1
+  - healthy : 0
+
+predicates:
+  Classifier:
+    args: [person]
+    structure:
+      type: feed-forward
+      layers:
+        - in: [person, 4 * person]
+          activation: relu
+        - hidden: [4 * person, 4 * person]
+          activation: relu
+        - out: [ 4 * person, 1]
+          activation: sigmoid  
+          
+constraints:
+  - all person. (y == diabetes -> Classifier(person))
+  - all person. (y == healthy -> not Classifier(person)) 

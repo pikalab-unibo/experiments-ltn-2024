@@ -11,6 +11,8 @@ from ltn_imp.parsing.parser_generator import LTNParser
 from ltn_imp.parsing.expressions import *
 import os
 
+import pandas as pd 
+
 make_visitable(Expression)    
 
 def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
@@ -130,7 +132,7 @@ class ExpressionVisitor(Visitor):
             NegatedExpression: Not,
             NegativeExpression: Negative,
             EqualityExpression: Eq_Regression,
-            DirectEqualityExpression : Eq_Classification, # TODO: NOT IMPLEMENTED
+            DirectEqualityExpression : Eq_Classification, 
             AdditionExpression: Add,
             SubtractionExpression: Subtract,
             MultiplicationExpression: Multiply,
@@ -276,7 +278,7 @@ class ExpressionVisitor(Visitor):
         variable = expression.variable
 
         if str(variable) in variable_mapping:
-            index = [ list(idx.values())[0] for idx in self.yaml["features"][str(variable)] ].index(feature)
+            index = self.yaml["features"][str(variable)].index(feature)
             return self.visit(variable)(variable_mapping)[:, index]
         else:
             if str(feature).isdigit():
