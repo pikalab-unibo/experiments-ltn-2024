@@ -42,3 +42,7 @@ predicates:
 constraints:
   - all person. (y == diabetes -> Classifier(person))
   - all person. (y == healthy -> not Classifier(person)) 
+  - all person. ( (person[BMI] < 25) -> not Classifier(person))
+  - all person. ( (person[BMI] > 35) -> Classifier(person))
+  - all person. ( (person[Glucose] < 100) -> not Classifier(person))
+  - all person. ( (person[Glucose] > 127) -> Classifier(person))
