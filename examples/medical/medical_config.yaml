@@ -1,6 +1,8 @@
 instances:
   - person
   - y
+  - test_person
+  - test_y
 
 features:
   person:
@@ -14,12 +16,31 @@ features:
     - Age
   y:
     - Outcome
+    
+  test_person:
+    - Pregnancies
+    - Glucose
+    - BloodPressure
+    - SkinThickness
+    - Insulin
+    - BMI
+    - DiabetesPedigreeFunction
+    - Age
+  test_y:
+    - Outcome
+
 
 data:
-  binary:
+  train:
     instances: [person]
     targets: [y]
-    path: datasets/pima_indians_imputed.csv
+    path: datasets/train.csv
+    batch_size: 32
+
+  test:
+    instances: [test_person]
+    targets: [test_y]
+    path: datasets/test.csv
     batch_size: 128
 
 constants:
