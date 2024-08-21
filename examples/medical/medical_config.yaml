@@ -32,17 +32,17 @@ predicates:
     structure:
       type: feed-forward
       layers:
-        - in: [person, 4 * person]
-          activation: relu
-        - hidden: [4 * person, 4 * person]
-          activation: relu
-        - out: [ 4 * person, 1]
+        - in: [person, 8 * person]
+          activation: elu
+        - hidden: [8 * person, 16 * person]
+          activation: elu
+        - hidden: [16 * person, 8 * person]
+          activation: elu
+        - out: [ 8 * person, 1]
           activation: sigmoid  
           
 constraints:
   - all person. (y == diabetes -> Classifier(person))
   - all person. (y == healthy -> not Classifier(person)) 
-  - all person. ( (person[BMI] < 25) -> not Classifier(person))
-  - all person. ( (person[BMI] > 35) -> Classifier(person))
-  - all person. ( (person[Glucose] < 100) -> not Classifier(person))
-  - all person. ( (person[Glucose] > 127) -> Classifier(person))
+  - all person. ( ((person[BMI] < 26) and (person[Glucose] < 101)) -> not Classifier(person))
+  - all person. ( ((person[BMI] > 29) and (person[Glucose] > 125)) -> Classifier(person))
