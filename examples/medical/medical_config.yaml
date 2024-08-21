@@ -16,7 +16,7 @@ features:
     - Age
   y:
     - Outcome
-    
+
   test_person:
     - Pregnancies
     - Glucose
@@ -53,13 +53,11 @@ predicates:
     structure:
       type: feed-forward
       layers:
-        - in: [person, 8 * person]
+        - in: [person, 4 * person]
           activation: elu
-        - hidden: [8 * person, 16 * person]
+        - hidden: [4 * person, 4 * person]
           activation: elu
-        - hidden: [16 * person, 8 * person]
-          activation: elu
-        - out: [ 8 * person, 1]
+        - out: [ 4 * person, 1]
           activation: sigmoid  
           
 constraints:
