@@ -60,6 +60,7 @@ predicates:
     args: [person]
     structure:
       type: feed-forward
+      loss: binary_cross_entropy
       layers:
         - in: [person, 4 * person]
           activation: elu
@@ -69,19 +70,30 @@ predicates:
           activation: elu
         - hidden: [16 * person, 32 * person]
           activation: elu
-        - hidden: [32 * person, 4 * person]
+        - hidden: [32 * person, 64 * person]
           activation: elu
-        - out: [ 4 * person, 1]
-          activation: sigmoid  
+        - hidden: [64 * person, 128 * person]
+          activation: elu
+        - hidden: [128 * person, 64 * person]
+          activation: elu
+        - hidden: [64 * person, 32 * person]
+          activation: elu
+        - hidden: [32 * person, 16 * person]
+          activation: elu
+        - hidden: [16 * person, 8 * person]
+          activation: elu
+        - out: [8 * person, 1]
+          activation: sigmoid
+
           
 constraints:
   - all person. (y == diabetes -> Diabetic(person))
   - all person. (y == healthy -> not Diabetic(person)) 
-  - all person. ( ( (person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))
-  - all person. ( ( (person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))
-  - all person. ( ( (person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] > 0.32 )) -> Diabetic(person))
-  - all person. ( ( (person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] <= 31.40)) -> not Diabetic(person))
-  - all person. ( ( (person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] > 31.40)) -> Diabetic(person))
+  - all person. (((person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))
+  - all person. (((person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))
+  - all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] > 0.32 )) -> Diabetic(person))
+  - all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] <= 31.40)) -> not Diabetic(person))
+  - all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] > 31.40)) -> Diabetic(person))
   - all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] <= 45.44)) -> not Diabetic(person))
   - all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] > 45.44)) -> Diabetic(person))
   - all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] > 0.50)) -> Diabetic(person))
