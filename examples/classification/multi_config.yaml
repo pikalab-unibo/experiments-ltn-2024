@@ -11,7 +11,7 @@ features:
   species:
     - species
 
-data:
+train:
   multi:
     instances: [flower]
     targets: [species]

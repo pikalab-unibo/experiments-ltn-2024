@@ -9,7 +9,7 @@ features:
   y:
     - 2
 
-data:
+train:
   binary:
     instances: [x]
     targets: [y]

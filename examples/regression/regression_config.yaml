@@ -13,7 +13,7 @@ features:
   y:
     - Y house price of unit area
 
-data:
+train:
   regression:
     instances: [x]
     targets: [y]
