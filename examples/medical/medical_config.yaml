@@ -52,11 +52,11 @@ predicates:
     structure:
       type: feed-forward
       layers:
-        - in: [person, 4 * person]
+        - in: [person, 8 * person]
           activation: elu
-        - hidden: [4 * person, 4 * person]
+        - hidden: [8 * person, 8 * person]
           activation: elu
-        - out: [ 4 * person, 1]
+        - out: [ 8 * person, 1]
           activation: sigmoid  
           
 constraints:
