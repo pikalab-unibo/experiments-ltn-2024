@@ -63,9 +63,13 @@ predicates:
       layers:
         - in: [person, 8 * person]
           activation: elu
-        - hidden: [8 * person, 8 * person]
+        - hidden: [8 * person, 16 * person]
           activation: elu
-        - out: [ 8 * person, 1]
+        - hidden: [16 * person, 8 * person]
+          activation: elu
+        - hidden: [8 * person, 4 * person]
+          activation: elu
+        - out: [ 4 * person, 1]
           activation: sigmoid  
           
 constraints:
@@ -81,3 +85,5 @@ constraints:
   - all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] > 0.50)) -> Diabetic(person))
   - all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] <= 91.0)) -> not Diabetic(person))
   - all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] > 91.0)) -> Diabetic(person))
+
+unused:

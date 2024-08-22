@@ -179,10 +179,10 @@ class KnowledgeBase:
             validation_loss = self.loss(rule_outputs)
         return validation_loss
 
-    def optimize(self, num_epochs=10, log_steps=10, lr=0.001, early_stopping=False, patience=5, min_delta=0.0):
+    def optimize(self, num_epochs=10, log_steps=10, lr=0.001, early_stopping=False, patience=5, min_delta=0.0, weight_decay=0.0):
 
         try:
-            self.optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+            self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         except:
             print("No parameters to optimize")
             return
