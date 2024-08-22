@@ -223,8 +223,10 @@ class KnowledgeBase:
                 validation_loss = self.compute_validation_loss() if self.val_loaders else None
                 print([str(rule) for rule in self.rules])
                 if validation_loss is not None:
+                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                 else:
+                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}")
                 print()
 
@@ -238,5 +240,6 @@ class KnowledgeBase:
                     epochs_no_improve += 1
 
                 if epochs_no_improve >= patience:
+                    print("Rule Outputs: ", rule_outputs)
                     print(f"Early stopping at Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                     break
