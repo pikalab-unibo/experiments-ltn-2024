@@ -1,6 +1,6 @@
 import torch 
 from ltn_imp.fuzzy_operators.aggregators import SatAgg
-from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper, DynamicDataset
+from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper
 from ltn_imp.parsing.parser import LTNConverter
 from ltn_imp.parsing.ancillary_modules import ModuleFactory
 from ltn_imp.automation.network_factory import NNFactory
@@ -9,7 +9,7 @@ import yaml
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file, loaders=None):
+    def __init__(self, yaml_file):
         with open(yaml_file, "r") as file:
             config = yaml.safe_load(file)
         self.config = config

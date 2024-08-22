@@ -2,7 +2,6 @@ from itertools import cycle
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import torch
-import numpy as np
 
 class DynamicDataset(Dataset):
     def __init__(self, config, features):

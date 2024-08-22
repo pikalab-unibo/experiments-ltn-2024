@@ -11,8 +11,6 @@ from ltn_imp.parsing.parser_generator import LTNParser
 from ltn_imp.parsing.expressions import *
 import os
 
-import pandas as pd 
-
 make_visitable(Expression)    
 
 def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
