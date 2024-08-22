@@ -29,7 +29,6 @@ features:
   test_y:
     - Outcome
 
-
 data:
   train:
     instances: [person]
