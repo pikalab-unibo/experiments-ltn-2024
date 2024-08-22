@@ -61,13 +61,15 @@ predicates:
     structure:
       type: feed-forward
       layers:
-        - in: [person, 8 * person]
+        - in: [person, 4 * person]
+          activation: elu
+        - hidden: [4 * person, 8 * person]
           activation: elu
         - hidden: [8 * person, 16 * person]
           activation: elu
-        - hidden: [16 * person, 8 * person]
+        - hidden: [16 * person, 32 * person]
           activation: elu
-        - hidden: [8 * person, 4 * person]
+        - hidden: [32 * person, 4 * person]
           activation: elu
         - out: [ 4 * person, 1]
           activation: sigmoid  
