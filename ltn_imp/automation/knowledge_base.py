@@ -18,12 +18,12 @@ class KnowledgeBase:
         self.set_loaders()
         self.set_val_loaders()
         self.set_test_loaders()
-
         self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
         self.converter = LTNConverter(yaml=self.config, predicates=self.predicates)
         self.set_ancillary_rules()
         self.set_rules()
+        self.set_rule_weights()
         self.set_rule_to_data_loader_mapping()
 
     def set_constant_mapping(self):
@@ -78,7 +78,10 @@ class KnowledgeBase:
             self.predicates[predicate_name] = network.float()
 
     def set_rules(self):
-        self.rules = [self.converter(rule) for rule in self.config["constraints"]]
+        self.rules = [self.converter(rule["rule"]) for rule in self.config["constraints"]]
+
+    def set_rule_weights(self):
+        self.rule_weights = [int(rule.get("weight", 1)) for rule in self.config["constraints"]]
 
     def set_ancillary_rules(self):
         if "knowledge" not in self.config:
@@ -135,8 +138,13 @@ class KnowledgeBase:
         self.rule_to_data_loader_mapping = rule_to_loader_mapping
     
     def loss(self, rule_outputs):
+        input = []
+        for weight, rule_output in zip(self.rule_weights, rule_outputs):
+            for _ in range(weight):
+                input.append(rule_output)
+                             
         sat_agg_value = sat_agg_op(
-            *rule_outputs
+            *input,
         )
         loss = 1.0 - sat_agg_value
         return loss

@@ -34,5 +34,5 @@ predicates:
           activation: sigmoid  
           
 constraints: 
-  - all x. (y == pos -> Classifier(x))
-  - all x. (y == neg -> not Classifier(x))
+  - rule: all x. (y == pos -> Classifier(x))
+  - rule: all x. (y == neg -> not Classifier(x))
