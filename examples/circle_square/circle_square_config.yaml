@@ -1,0 +1,45 @@
+instances:
+  - i
+
+features:
+
+train:
+
+validation:
+
+test:
+
+
+constants:
+  - in: 0
+  - int: 1
+  - out: 2
+
+predicates:
+
+  Circle:
+  
+  Rect:
+
+
+knowledge:
+# Inside rule
+  - rule: Inside
+  - args: [c1, c2, r, t1, t2, b1, b2]
+  - clause: (((c1 + r) > t1) and ((c1 - r) < b1) and ((c2 + r) > b2) and ((c2 - r) < t2))",
+
+# Outside rule
+  - rule: Outside
+  - args: [c1, c2, r, t1, t2, b1, b2]
+  - clause:  (((c1 + r) < t1) or ((c1 - r) > b1) or ((c2 + r) < b2) or ((c2 - r) > t2))",
+
+# Independent Intersect rule
+  - rule: Intersect
+  - args: [c1, c2, r, t1, t2, b1, b2]
+  - clause:  (((c1 + r) > t1) and ((c1 - r) < b1) and ((c2 + r) > b2) and ((c2 - r) < t2))",
+
+constraints:
+  - rule: "all i. (Circle(i, c1, c2, r) and Rect(i, t1, t2, b1, b2))",
+  - rule: "all i. ((y == in) ->  Inside(c1, c2, r, t1, t2, b1, b2))",
+  - rule: "all i. ((y == int) -> Intersect(c1, c2, r, t1, t2, b1, b2))",
+  - rule: "all i. ((y == out) -> Outside(c1, c2, r, t1, t2, b1, b2))",
