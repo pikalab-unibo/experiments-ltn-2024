@@ -88,10 +88,10 @@ predicates:
           
 constraints:
   - rule: "all person. (y == diabetes -> Diabetic(person))"
-    weight: 4
+    weight: 1
   
   - rule: "all person. (y == healthy -> not Diabetic(person))"
-    weight: 2
+    weight: 1
 
   - rule: "all person. (((person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))"
   - rule: "all person. (((person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))"

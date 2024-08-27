@@ -9,7 +9,17 @@ import yaml
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file):
+    def __init__(self, yaml_file, device = "cpu"):
+
+        if device == "cuda" and torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif device == "mps" and torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
+    
+        print(f"Using device: {self.device}")
+        
         with open(yaml_file, "r") as file:
             config = yaml.safe_load(file)
         self.config = config
@@ -20,7 +30,7 @@ class KnowledgeBase:
         self.set_test_loaders()
         self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
-        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates)
+        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device)
         self.set_ancillary_rules()
         self.set_rules()
         self.set_rule_weights()
@@ -77,6 +87,9 @@ class KnowledgeBase:
 
             self.predicates[predicate_name] = network.float()
 
+            for predicate in self.predicates.values():
+                predicate.to(self.device)
+
     def set_rules(self):
         self.rules = [self.converter(rule["rule"]) for rule in self.config["constraints"]]
 
@@ -97,7 +110,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["train"]:
             dataset = self.config["train"][dataset]
-            loader = LoaderWrapper(dataset, features)
+            loader = LoaderWrapper(dataset, features, device=self.device)
             self.loaders.append(loader)
 
     def set_val_loaders(self):
@@ -108,7 +121,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["validation"]:
             dataset = self.config["validation"][dataset]
-            loader = LoaderWrapper(dataset, features)
+            loader = LoaderWrapper(dataset, features, device=self.device)
             self.val_loaders.append(loader)
 
     def set_test_loaders(self):
@@ -119,7 +132,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["test"]:
             dataset = self.config["test"][dataset]
-            loader = LoaderWrapper(dataset, features)
+            loader = LoaderWrapper(dataset, features, device=self.device)
             self.test_loaders.append(loader)
         
     def set_rule_to_data_loader_mapping(self):
@@ -158,17 +171,16 @@ class KnowledgeBase:
         return params
     
     def partition_data(self, var_mapping, batch, loader):
-
         for k, v in self.constant_mapping.items(): 
-            var_mapping[k] = v
+            var_mapping[k] = v.to(self.device)
 
         *batch, = batch 
 
         for i, var in enumerate(loader.variables):
-            var_mapping[var] = batch[i]
+            var_mapping[var] = batch[i].to(self.device)
 
         for i, target in enumerate(loader.targets):
-            var_mapping[target] = batch[i + len(loader.variables)]
+            var_mapping[target] = batch[i + len(loader.variables)].to(self.device)
             
     def compute_validation_loss(self):
         with torch.no_grad():
@@ -187,8 +199,8 @@ class KnowledgeBase:
             validation_loss = self.loss(rule_outputs)
         return validation_loss
 
-    def optimize(self, num_epochs=10, log_steps=10, lr=0.001, early_stopping=False, patience=5, min_delta=0.0, weight_decay=0.0):
-
+    def optimize(self, num_epochs=10, log_steps=10, lr=0.001, early_stopping=False, patience=5, min_delta=0.0, weight_decay=0.0, verbose = True):
+    
         try:
             self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
         except:
@@ -227,7 +239,7 @@ class KnowledgeBase:
                 loss.backward()
                 self.optimizer.step()
 
-            if epoch % log_steps == 0:
+            if epoch % log_steps == 0 and verbose:
                 validation_loss = self.compute_validation_loss() if self.val_loaders else None
                 print([str(rule) for rule in self.rules])
                 if validation_loss is not None:
@@ -239,7 +251,7 @@ class KnowledgeBase:
                 print()
 
             # Early Stopping Logic
-            if early_stopping and self.val_loaders:
+            if early_stopping and self.val_loaders and verbose:
                 validation_loss = self.compute_validation_loss()
                 if validation_loss + min_delta < best_val_loss:
                     best_val_loss = validation_loss

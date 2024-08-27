@@ -4,9 +4,10 @@ import pandas as pd
 import torch
 
 class DynamicDataset(Dataset):
-    def __init__(self, config, features):
+    def __init__(self, config, features, device=None):
         self.config = config
         self.features = features
+        self.device = device  # Store the device
         self.data = pd.read_csv(config["path"], index_col=0)
         self.batch_size = config["batch_size"]
         
@@ -32,15 +33,16 @@ class DynamicDataset(Dataset):
             target_data = self.data[self.target_features[target]].iloc[idx]
             batch.append(target_data.values)
 
-        # Convert to tensors
-        batch = [torch.tensor(item, dtype=torch.float32) for item in batch]
+        # Convert to tensors and move to the specified device
+        batch = [torch.tensor(item, dtype=torch.float32).to(self.device) for item in batch]
         
         return tuple(batch)
 class LoaderWrapper:
-    def __init__(self, config, features):
+    def __init__(self, config, features, device=None):
         self.variables = config["instances"]
         self.targets = config["targets"]
-        self.loader = DataLoader(DynamicDataset(config, features), batch_size=config["batch_size"], shuffle=True)
+        # Pass the device to the DynamicDataset
+        self.loader = DataLoader(DynamicDataset(config, features, device=device), batch_size=config["batch_size"], shuffle=True)
 
     def __iter__(self):
         self.iter_loader = iter(self.loader)

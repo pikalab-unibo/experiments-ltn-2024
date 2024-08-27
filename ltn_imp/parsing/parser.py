@@ -23,10 +23,11 @@ def get_subclass_with_prefix(module, superclass: type, prefix: str = "default"):
     raise KeyError(f'No subtype of {superclass} found in module {module} with prefix "{prefix}"')
 
 class ConvertedExpression:
-    def __init__(self, expression, converted, visitor):
+    def __init__(self, expression, converted, visitor, device=None):
         self.expression = expression
         self.converted = converted
         self.visitor = visitor
+        self.device = device
 
         if hasattr(self.expression, "left"):
             self.left = expression.left
@@ -61,9 +62,12 @@ class ConvertedExpression:
 
     def __call__(self, *args, **kwargs):
         try:
-            return self.converted(*args, **kwargs)
+            result = self.converted(*args, **kwargs)
+            if isinstance(result, torch.Tensor):
+                result = result.to(self.device)
+            return result
         except Exception as e:
-            print(f"For Expression {self.expression} this error occured: {e}")
+            print(f"For Expression {self.expression} this error occurred: {e}")
             raise e
         
     def __str__(self):
@@ -86,7 +90,7 @@ class ConvertedExpression:
         return dot
     
 class ExpressionVisitor(Visitor):
-    def __init__(self, yaml, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None):
+    def __init__(self, yaml, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None, device=torch.device("cpu")):
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
@@ -95,6 +99,7 @@ class ExpressionVisitor(Visitor):
 
         self.declarations = declarations if declarations is not None else {}
         self.declarers = declarers if declarers is not None else {}
+        self.device = device
 
         self.yaml = yaml
 
@@ -175,6 +180,9 @@ class ExpressionVisitor(Visitor):
             else:
                 to_be_declared = variables[i:]
                 break
+
+        for input in inputs:
+           input = input.to(self.device)
 
         results = predicate(*inputs)
         
@@ -289,7 +297,7 @@ class ExpressionVisitor(Visitor):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_indexing(variable_mapping, expression), self)
 
 class LTNConverter:
-    def __init__(self,yaml = None, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}):
+    def __init__(self,yaml = None, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}, device=torch.device("cpu")):
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
@@ -300,6 +308,7 @@ class LTNConverter:
         parser_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fol_parser.ebnf")
         self.parser = LTNParser(parser_path)
         self.yaml = yaml
+        self.device = device
 
     def parse(self, expression):
         expression = self.parser.parse(expression)
@@ -317,7 +326,8 @@ class LTNConverter:
             connective_impls=self.connective_impls, 
             quantifier_impls=self.quantifier_impls, 
             declarations=self.declarations, 
-            declarers=self.declarers
+            declarers=self.declarers,
+            device=self.device
         )
 
-        return ConvertedExpression(self.expression, expression.accept(visitor), visitor)
+        return ConvertedExpression(self.expression, expression.accept(visitor), visitor, device=self.device)
