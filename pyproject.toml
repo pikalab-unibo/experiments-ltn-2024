@@ -6,7 +6,7 @@ packages = [
     { include = "ltn_imp" },
 ]
 
-version = "2.23.2-dev5"
+version = "2.24.1"
 description = "A parser for FOL that utilizes NLTK Logic Module to parse and fuzzify FOL rules."
 authors = ["Emre Kuru <emre.kuru@ozu.edu.tr>"]
 license = "Apache 2.0"
@@ -22,7 +22,6 @@ torchviz = "^0.0.2"
 pyyaml = "^6.0.2"
 tatsu = "^5.12.1"
 setuptools = "^73.0.0"
-optuna = "^3.6.1"
 
 [tool.poetry.group.dev.dependencies]
 poetry = "^1.7.0"
