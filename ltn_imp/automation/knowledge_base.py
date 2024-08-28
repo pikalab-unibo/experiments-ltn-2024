@@ -71,24 +71,29 @@ class KnowledgeBase:
             
             layers = []
             activations = []
+            regularizations = []
 
             for layer in structure['layers']:
                 layer_type = list(layer.keys())[0]
                 layer_size = layer[layer_type]
                 activation = layer.get('activation', None)
+                regularization = layer.get('regularization', [])
+                
                 in_size, out_size = self.evaluate_layer_size(layer_size, features, args)
                 layers.append((in_size, out_size))
                 activations.append(activation)
+                regularizations.append(regularization)
 
             network = self.factory(
                 layers=layers,
-                activations=activations
+                activations=activations,
+                regularizations=regularizations
             )
 
             self.predicates[predicate_name] = network.float()
 
-            for predicate in self.predicates.values():
-                predicate.to(self.device)
+        for predicate in self.predicates.values():
+            predicate.to(self.device)
 
     def set_rules(self):
         self.rules = [self.converter(rule["rule"]) for rule in self.config["constraints"]]

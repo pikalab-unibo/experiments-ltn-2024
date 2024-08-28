@@ -1,8 +1,6 @@
 instances:
   - person
   - y
-  - test_person
-  - test_y
 
 features:
   person:
@@ -15,18 +13,6 @@ features:
     - DiabetesPedigreeFunction
     - Age
   y:
-    - Outcome
-
-  test_person:
-    - Pregnancies
-    - Glucose
-    - BloodPressure
-    - SkinThickness
-    - Insulin
-    - BMI
-    - DiabetesPedigreeFunction
-    - Age
-  test_y:
     - Outcome
 
 train:
@@ -50,7 +36,6 @@ test:
     path: datasets/test.csv
     batch_size: 128
 
-
 constants:
   - diabetes : 1
   - healthy : 0
@@ -62,36 +47,44 @@ predicates:
       type: feed-forward
       loss: binary_cross_entropy
       layers:
-        - in: [person, 4 * person]
+        - in: [person, 16 * person]
           activation: elu
-        - hidden: [4 * person, 8 * person]
-          activation: elu
-        - hidden: [8 * person, 16 * person]
-          activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
         - hidden: [16 * person, 32 * person]
           activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+            
         - hidden: [32 * person, 64 * person]
           activation: elu
-        - hidden: [64 * person, 128 * person]
-          activation: elu
-        - hidden: [128 * person, 64 * person]
-          activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
         - hidden: [64 * person, 32 * person]
           activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
         - hidden: [32 * person, 16 * person]
           activation: elu
-        - hidden: [16 * person, 8 * person]
-          activation: elu
-        - out: [8 * person, 1]
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
+        - out: [16 * person, 1]
           activation: sigmoid
+
 
           
 constraints:
   - rule: "all person. (y == diabetes -> Diabetic(person))"
-    weight: 1
-  
   - rule: "all person. (y == healthy -> not Diabetic(person))"
-    weight: 1
 
   - rule: "all person. (((person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))"
   - rule: "all person. (((person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))"
@@ -103,8 +96,6 @@ constraints:
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] > 0.50)) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] > 45.44)) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] <= 45.44)) -> not Diabetic(person))"
-
+  
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] > 91.0)) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] <= 91.0)) -> not Diabetic(person))"
-
-unused:

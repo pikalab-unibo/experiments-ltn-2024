@@ -1,0 +1,89 @@
+instances:
+  - person
+  - y
+
+features:
+  person:
+    - Pregnancies
+    - Glucose
+    - BloodPressure
+    - SkinThickness
+    - Insulin
+    - BMI
+    - DiabetesPedigreeFunction
+    - Age
+  y:
+    - Outcome
+
+train:
+  medical:
+    instances: [person]
+    targets: [y]
+    path: datasets/train.csv
+    batch_size: 32
+
+validation:
+  medical:
+    instances: [person]
+    targets: [y]
+    path: datasets/val.csv
+    batch_size: 128
+
+test:
+  medical:
+    instances: [person]
+    targets: [y]
+    path: datasets/test.csv
+    batch_size: 128
+
+constants:
+  - diabetes : 1
+  - healthy : 0
+
+predicates:
+  Diabetic:
+    args: [person]
+    structure:
+      type: feed-forward
+      loss: binary_cross_entropy
+      layers:
+        - in: [person, 16 * person]
+          activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
+        - hidden: [16 * person, 32 * person]
+          activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+            
+        - hidden: [32 * person, 64 * person]
+          activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
+        - hidden: [64 * person, 32 * person]
+          activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
+        - hidden: [32 * person, 16 * person]
+          activation: elu
+          regularization: 
+            - dropout: 0.0
+            - batch_norm: True
+
+        - out: [16 * person, 1]
+          activation: sigmoid
+
+
+          
+constraints:
+  - rule: "all person. (y == diabetes -> Diabetic(person))"
+  - rule: "all person. (y == healthy -> not Diabetic(person))"
+
+
