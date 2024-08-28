@@ -45,41 +45,39 @@ predicates:
     args: [person]
     structure:
       type: feed-forward
-      loss: binary_cross_entropy
       layers:
         - in: [person, 16 * person]
-          activation: elu
+          activation: relu
           regularization: 
             - dropout: 0.0
             - batch_norm: True
 
         - hidden: [16 * person, 32 * person]
-          activation: elu
+          activation: relu
           regularization: 
             - dropout: 0.0
             - batch_norm: True
             
         - hidden: [32 * person, 64 * person]
-          activation: elu
+          activation: relu
           regularization: 
             - dropout: 0.0
             - batch_norm: True
 
         - hidden: [64 * person, 32 * person]
-          activation: elu
+          activation: relu
           regularization: 
             - dropout: 0.0
             - batch_norm: True
 
         - hidden: [32 * person, 16 * person]
-          activation: elu
+          activation: relu
           regularization: 
             - dropout: 0.0
             - batch_norm: True
 
         - out: [16 * person, 1]
           activation: sigmoid
-
 
           
 constraints:
