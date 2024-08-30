@@ -30,11 +30,14 @@ class KnowledgeBase:
         self.set_test_loaders()
         self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
-        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device)
+        self.set_converter()
         self.set_ancillary_rules()
         self.set_rules()
         self.set_rule_weights()
         self.set_rule_to_data_loader_mapping()
+
+    def set_converter(self):
+        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device) 
 
     def set_constant_mapping(self):
         constants = self.config.get("constants", [])

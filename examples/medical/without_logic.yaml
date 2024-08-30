@@ -46,32 +46,20 @@ predicates:
     structure:
       type: feed-forward
       layers:
-          - in: [person, 128 * person]
-            activation: relu
-            regularization: 
-              - dropout: 0.1
-              - batch_norm: True
+        - in: [person, 64] 
+          activation: relu
+          regularization: 
+            - dropout: 0.04058443799610505
+            - batch_norm: True
 
-          - hidden: [128 * person, 256 * person]
-            activation: relu
-            regularization: 
-              - dropout: 0.1
-              - batch_norm: True
+        - hidden: [64, 128]
+          activation: relu
+          regularization: 
+            - dropout: 0.04058443799610505
+            - batch_norm: True
 
-          - hidden: [256 * person, 64 * person]
-            activation: relu
-            regularization:
-              - dropout: 0.1
-              - batch_norm: True
-
-          - hidden: [64 * person, 16 * person]
-            activation: relu
-            regularization: 
-              - dropout: 0.1
-              - batch_norm: True
-
-          - out: [16 * person, 1]
-            activation: sigmoid
+        - out: [128, 1]
+          activation: sigmoid
           
 constraints:
   - rule: "all person. (y == diabetes -> Diabetic(person))"

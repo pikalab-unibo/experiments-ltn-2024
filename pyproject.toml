@@ -23,6 +23,7 @@ pyyaml = "^6.0.2"
 tatsu = "^5.12.1"
 setuptools = "^73.0.0"
 seaborn = "^0.13.2"
+hyperopt = "^0.2.7"
 
 [tool.poetry.group.dev.dependencies]
 poetry = "^1.7.0"

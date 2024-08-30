@@ -46,44 +46,36 @@ predicates:
     structure:
       type: feed-forward
       layers:
-          - in: [person, 128 * person]
-            activation: relu
-            regularization: 
-              - dropout: 0.1
-              - batch_norm: True
+        - in: [person, 64] 
+          activation: relu
+          regularization: 
+            - dropout: 0.04058443799610505
+            - batch_norm: True
 
-          - hidden: [128 * person, 256 * person]
-            activation: relu
-            regularization: 
-              - dropout: 0.1
-              - batch_norm: True
+        - hidden: [64, 128]
+          activation: relu
+          regularization: 
+            - dropout: 0.04058443799610505
+            - batch_norm: True
 
-          - hidden: [256 * person, 64 * person]
-            activation: relu
-            regularization:
-              - dropout: 0.1
-              - batch_norm: True
-
-          - hidden: [64 * person, 16 * person]
-            activation: relu
-            regularization: 
-              - dropout: 0.1
-              - batch_norm: True
-
-          - out: [16 * person, 1]
-            activation: sigmoid
+        - out: [128, 1]
+          activation: sigmoid
 
           
 constraints:
   - rule: "all person. (y == diabetes -> Diabetic(person))"
   - rule: "all person. (y == healthy -> not Diabetic(person))"
 
+  - rule: "all person. (((person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))"
   - rule: "all person. (((person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))"
+
   - rule: "all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] > 0.32 )) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] > 31.40)) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] <= 31.40)) -> not Diabetic(person))"
+
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] > 0.50)) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] > 45.44)) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] <= 45.44)) -> not Diabetic(person))"
+  
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] > 91.0)) -> Diabetic(person))"
   - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] <= 91.0)) -> not Diabetic(person))"
