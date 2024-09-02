@@ -216,7 +216,7 @@ class TanEqConnective(EqConnective): # This returns a tensor of the form [ [0], 
             b = b.unsqueeze(1)
 
         # Perform the operation
-        result = 1 - torch.tanh(2 * torch.abs(torch.sub(a,b)))**2
+        result = 1 - torch.tanh(3 * torch.abs(torch.sub(a,b)))**2
         
         return result
     
