@@ -72,14 +72,3 @@ constraints:
 
   - rule: "all person. (((person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))"
   - rule: "all person. (((person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))"
-
-  - rule: "all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] > 0.32 )) -> Diabetic(person))"
-  - rule: "all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] > 31.40)) -> Diabetic(person))"
-  - rule: "all person. (((person[Glucose] > 143.5) and (person[DiabetesPedigreeFunction] <= 0.32) and (person[BMI] <= 31.40)) -> not Diabetic(person))"
-
-  - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] > 0.50)) -> Diabetic(person))"
-  - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] > 45.44)) -> Diabetic(person))"
-  - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] <= 7.5) and (person[BMI] <= 45.44)) -> not Diabetic(person))"
-
-  - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] > 91.0)) -> Diabetic(person))"
-  - rule: "all person. (((person[Glucose] <= 143.5) and (person[Pregnancies] > 7.5) and (person[DiabetesPedigreeFunction] <= 0.50) and (person[BloodPressure] <= 91.0)) -> not Diabetic(person))"

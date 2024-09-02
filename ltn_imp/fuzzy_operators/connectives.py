@@ -216,8 +216,7 @@ class TanEqConnective(EqConnective): # This returns a tensor of the form [ [0], 
             b = b.unsqueeze(1)
 
         # Perform the operation
-        result = 1 - torch.tanh(3 * torch.abs(torch.sub(a,b)))**2
-        
+        result = 1 - torch.tanh(2 * torch.abs(torch.sub(a,b)))**2        
         return result
     
 class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0, 1, 0, 1, 0, 1, ...]
@@ -236,11 +235,12 @@ class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0,
         if b.ndim == 1:
             b = b.unsqueeze(1)
 
-        alpha = 0.05  # You can adjust the value of alpha as needed
+        alpha = 0.005  # You can adjust the value of alpha as needed
         result = torch.exp(-alpha * torch.sqrt(torch.sum(torch.square(a - b), dim=1)))
+
         return result
     
-DefaultEqConnective = TanEqConnective
+DefaultEqConnective = SqrtEqConnective
 
 # LessThan Connective
 class LessThanConnective(BinaryConnective):

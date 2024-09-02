@@ -216,7 +216,6 @@ class KnowledgeBase:
             return
 
         all_loaders = set(loader for loaders in self.rule_to_data_loader_mapping.values() if loaders is not None for loader in loaders if loader is not None)
-
         combined_loader = CombinedDataLoader([loader for loader in all_loaders if loader is not None])
         best_val_loss = float('inf')
         epochs_no_improve = 0
