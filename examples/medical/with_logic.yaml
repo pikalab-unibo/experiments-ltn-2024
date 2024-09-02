@@ -48,17 +48,17 @@ predicates:
       type: feed-forward
       layers:
         - in: [person, 256] 
-          activation: relu
+          activation: leaky_relu
           regularization: 
             - batch_norm: True
 
         - hidden: [256, 128]
-          activation: relu
+          activation: leaky_relu
           regularization: 
             - batch_norm: True
 
         - hidden: [128, 64]
-          activation: relu
+          activation: leaky_relu
           regularization: 
             - batch_norm: True
 
