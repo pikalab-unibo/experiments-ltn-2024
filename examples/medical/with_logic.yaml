@@ -15,7 +15,6 @@ features:
   y:
     - Outcome
 
-
 train:
   medical:
     instances: [person]
@@ -72,3 +71,6 @@ constraints:
 
   - rule: "all person. (((person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))"
   - rule: "all person. (((person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))"
+
+
+

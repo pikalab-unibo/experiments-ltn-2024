@@ -244,24 +244,52 @@ DefaultEqConnective = SqrtEqConnective
 
 # LessThan Connective
 class LessThanConnective(BinaryConnective):
-    def __init__(self, k=5):
+    def __init__(self, k=10):
         self.k = k
         super().__init__(self.implementation)
 
-    def implementation(self, tensor1, tensor2):
-        return torch.sigmoid(self.k * (tensor2 - tensor1))
+    def normalize_min_max(self, tensor1, tensor2):
+        
+        if tensor2.dim() == 0:
+            tensor2 = tensor2.unsqueeze(0)
 
+        combined_min = torch.min(torch.cat((tensor1, tensor2)))
+        combined_max = torch.max(torch.cat((tensor1, tensor2)))
+        tensor1_normalized = (tensor1 - combined_min) / (combined_max - combined_min)
+        tensor2_normalized = (tensor2 - combined_min) / (combined_max - combined_min)
+        return tensor1_normalized, tensor2_normalized
+
+    def implementation(self, tensor1, tensor2):
+        tensor1_normalized, tensor2_normalized = self.normalize_min_max(tensor1, tensor2)
+        result = torch.sigmoid(self.k * (tensor2_normalized - tensor1_normalized))
+        return result
+
+    
 class DefaultLessThanConnective(LessThanConnective):
     pass
 
 # MoreThan Connective
 class MoreThanConnective(BinaryConnective):
-    def __init__(self, k=5):
+    def __init__(self, k=10):
         self.k = k
         super().__init__(self.implementation)
 
+    def normalize_min_max(self, tensor1, tensor2):
+        
+        if tensor2.dim() == 0:
+            tensor2 = tensor2.unsqueeze(0)
+
+        combined_min = torch.min(torch.cat((tensor1, tensor2)))
+        combined_max = torch.max(torch.cat((tensor1, tensor2)))
+        tensor1_normalized = (tensor1 - combined_min) / (combined_max - combined_min)
+        tensor2_normalized = (tensor2 - combined_min) / (combined_max - combined_min)
+        return tensor1_normalized, tensor2_normalized
+
     def implementation(self, tensor1, tensor2):
-        return torch.sigmoid(self.k * (tensor1 - tensor2))
+        tensor1_normalized, tensor2_normalized = self.normalize_min_max(tensor1, tensor2)
+        result = torch.sigmoid(self.k * (tensor1_normalized - tensor2_normalized))
+        return result
+
 
 class DefaultMoreThanConnective(MoreThanConnective):
  pass
