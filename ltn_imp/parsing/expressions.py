@@ -11,7 +11,8 @@ def collect_variables(expr):
     elif isinstance(expr, NegativeExpression):
         variables.update(collect_variables(expr.term))
     elif isinstance(expr, QuantifiedExpression):
-        variables.add(expr.variable)
+        for variable in expr.variables_:
+            variables.add(variable)
         variables.update(collect_variables(expr.term))
     elif isinstance(expr, ApplicationExpression):
         for arg in expr.args:
@@ -116,16 +117,18 @@ class MoreEqualExpression(BinaryExpression):
         super().__init__(left, '>=', right)
 
 class QuantifiedExpression(Expression):
-    def __init__(self, quantifier, variable, term):
+    def __init__(self, quantifier, variables, term):
         self.quantifier = quantifier
-        self.variable = variable
+        self.variables_ = variables if isinstance(variables, list) else [variables]
         self.term = term
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}>: {self.quantifier} {self.variable}.({self.term})"
+        temp = [ str(variable) for variable in self.variables_]
+        return f"<{self.__class__.__name__}>: {self.quantifier} {temp}. ({self.term})"
     
     def __str__(self):
-        return f"{self.quantifier} {self.variable}.({self.term})"
+        temp = [ str(variable) for variable in self.variables_]
+        return f"{self.quantifier} {temp}. ({self.term})"
 
 class ExistsExpression(QuantifiedExpression):
     def __init__(self, variable, term):

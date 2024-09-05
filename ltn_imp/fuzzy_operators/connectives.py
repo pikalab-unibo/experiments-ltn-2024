@@ -253,6 +253,11 @@ class LessThanConnective(BinaryConnective):
         if tensor2.dim() == 0:
             tensor2 = tensor2.unsqueeze(0)
 
+        if tensor1.dim() > tensor2.dim():
+            tensor2 = tensor2.unsqueeze(-1).expand_as(tensor1)
+        elif tensor2.dim() > tensor1.dim():
+            tensor1 = tensor1.unsqueeze(-1).expand_as(tensor2)
+
         combined_min = torch.min(torch.cat((tensor1, tensor2)))
         combined_max = torch.max(torch.cat((tensor1, tensor2)))
         tensor1_normalized = (tensor1 - combined_min) / (combined_max - combined_min)
@@ -278,6 +283,11 @@ class MoreThanConnective(BinaryConnective):
         
         if tensor2.dim() == 0:
             tensor2 = tensor2.unsqueeze(0)
+
+        if tensor1.dim() > tensor2.dim():
+            tensor2 = tensor2.unsqueeze(-1).expand_as(tensor1)
+        elif tensor2.dim() > tensor1.dim():
+            tensor1 = tensor1.unsqueeze(-1).expand_as(tensor2)
 
         combined_min = torch.min(torch.cat((tensor1, tensor2)))
         combined_max = torch.max(torch.cat((tensor1, tensor2)))

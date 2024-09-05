@@ -132,7 +132,7 @@ index
     ;
     
 quantified
-    = quantifier variable '.' expression
+    = quantifier variables '.' expression
     ;
 
 quantifier

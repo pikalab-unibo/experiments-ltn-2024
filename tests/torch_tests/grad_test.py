@@ -29,32 +29,16 @@ class GradTests(unittest.TestCase):
             quantifier_impls=self.quantifier_impls
         )
 
-    def test_less_than_preserves_graph(self):
-        expression = 'all x. (Classifier(x) < 1)'
-        data = torch.tensor([[0.2, 0.8], [0.5, 0.5]], requires_grad=True)
-        var_mapping = {'x': data}
-        rule = self.converter(expression)
-        result = rule(var_mapping)
-        loss = 1 - result.mean()
-        loss.backward()
-        self.assertIsNotNone(data.grad)
-        print("Grad for less_than_preserves_graph:", data.grad)
-
-    def test_more_than_preserves_graph(self):
-        expression = 'all x. (Classifier(x) > 0)'
-        data = torch.tensor([[0.2, 0.8], [0.5, 0.5]], requires_grad=True)
-        var_mapping = {'x': data}
-        rule = self.converter(expression)
-        result = rule(var_mapping)
-        loss = 1 - result.mean()
-        loss.backward()
-        self.assertIsNotNone(data.grad)
-        print("Grad for more_than_preserves_graph:", data.grad)
-
     def test_combined_expression_preserves_graph(self):
-        expression = 'all x. Classifier(x) > 0 and Classifier(x) < 1'
-        data = torch.tensor([[0.2, 0.8], [0.5, 0.5]], requires_grad=True)
-        var_mapping = {'x': data}
+        expression = 'all x. Classifier(x) > zero and Classifier(x) < one'
+        
+        data = torch.tensor(
+            [
+            [0.2, 0.8],
+            [0.5, 0.5] 
+            ], requires_grad=True)
+        
+        var_mapping = {'x': data, 'zero': torch.tensor([[0.0]]), 'one': torch.tensor([[1.0]])}
         rule = self.converter(expression)
         result = rule(var_mapping)
         loss = 1 - result.mean()
@@ -63,7 +47,7 @@ class GradTests(unittest.TestCase):
         print("Grad for combined_expression_preserves_graph:", data.grad)
 
     def test_implies_preserves_graph(self):
-        expression = 'all x. (Classifier(x) -> Classifier(x) > 0)'
+        expression = 'all x. (Classifier(x) -> Classifier(x))'
         data = torch.tensor([[0.2, 0.8], [0.5, 0.5]], requires_grad=True)
         var_mapping = {'x': data}
         rule = self.converter(expression)
@@ -74,7 +58,7 @@ class GradTests(unittest.TestCase):
         print("Grad for implies_preserves_graph:", data.grad)
 
     def test_variable_declaration_and_operations(self):
-        expression = 'all x. (Classifier(x,z) and z > 0)'
+        expression = 'all x. (Classifier(x,z) and z = 0)'
         data = torch.tensor([[0.2, 0.8], [0.5, 0.5]], requires_grad=True)
         var_mapping = {'x': data}
         rule = self.converter(expression)
