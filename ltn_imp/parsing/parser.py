@@ -62,6 +62,8 @@ class ConvertedExpression:
 
     def __call__(self, *args, **kwargs):
         try:
+            args = [arg.to(self.device) if isinstance(arg, torch.Tensor) else arg for arg in args]
+            kwargs = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
             result = self.converted(*args, **kwargs)
             if isinstance(result, torch.Tensor):
                 result = result.to(self.device)
@@ -109,7 +111,7 @@ class ExpressionVisitor(Visitor):
         Implies = get_subclass_with_prefix(module=Connectives, superclass=ImpliesConnective, prefix=connective_impls.get('implies', 'default'))
         Equiv = get_subclass_with_prefix(module=Connectives, superclass=IffConnective, prefix=connective_impls.get('iff', 'default'))
 
-        Eq_Regression = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_reg', 'sqrt'))
+        Eq_Regression = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_reg', 'default'))
         Eq_Classification = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_class', 'tan'))        
 
         Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
@@ -122,6 +124,7 @@ class ExpressionVisitor(Visitor):
 
         LessThan = get_subclass_with_prefix(module=Connectives, superclass=LessThanConnective, prefix=predicates.get('lt', 'default'))
         MoreThan = get_subclass_with_prefix(module=Connectives, superclass=MoreThanConnective, prefix=predicates.get('gt', 'default'))
+
         LessThanEqual = get_subclass_with_prefix(module=Connectives, superclass=LessThanOrEqualConnective, prefix=predicates.get('le', 'default'))
         MoreThanEqual = get_subclass_with_prefix(module=Connectives, superclass=MoreThanOrEqualConnective, prefix=predicates.get('ge', 'default'))
 
@@ -195,18 +198,17 @@ class ExpressionVisitor(Visitor):
                 self.declarations[str(var)] = value
                 self.declarers[str(var)] = str(expression)
                 
-            self.intermediate_results[functor].append(torch.tensor([1.0], requires_grad=True))
-            return torch.tensor([1.0], requires_grad=True)
+            self.intermediate_results[functor].append(torch.tensor([1.0], requires_grad=True, device=self.device))
+            return torch.tensor([1.0], requires_grad=True, device=self.device)
 
         # Ensuring results is a tensor
         if isinstance(results, (list, tuple)):
-            results_tensor = torch.stack([res if isinstance(res, torch.Tensor) else torch.tensor(res) for res in results])
+            results_tensor = torch.stack([res if isinstance(res, torch.Tensor) else torch.tensor(res, device=self.device) for res in results])
         else:
             results_tensor = results
 
         self.intermediate_results[functor].append(results_tensor)
         return results_tensor
-
 
     def visit_ApplicationExpression(self, expression):
         variables = [arg for arg in expression.args]
@@ -222,7 +224,7 @@ class ExpressionVisitor(Visitor):
         else:
             raise ValueError(f"Unknown functor: {functor}")
 
-    def delay_execution(self, left, right, var_mapping, connective, expression):
+    def delay_execution(self, left, right, var_mapping, connective):
         try: # Right side might be declaring a variable in the left 
             left_value = left(var_mapping)
             right_value = right(var_mapping)
@@ -236,7 +238,7 @@ class ExpressionVisitor(Visitor):
         if connective:
             left = self.visit(expression.left)
             right = self.visit(expression.right)
-            return ConvertedExpression(expression, lambda var_mapping: self.delay_execution(left, right, var_mapping, connective, expression), self)
+            return ConvertedExpression(expression, lambda var_mapping: self.delay_execution(left, right, var_mapping, connective), self)
         else:
             raise NotImplementedError(f"Unsupported binary expression type: {type(expression)}")
 
@@ -274,7 +276,7 @@ class ExpressionVisitor(Visitor):
         if str(expression) in variable_mapping:
             return variable_mapping[str(expression)]
         else:
-            return torch.tensor(float(str(expression)),requires_grad=True)
+            return torch.tensor(float(str(expression)),requires_grad=True, device=self.device)
                 
     def visit_ConstantExpression(self, expression):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_constant(variable_mapping, expression), self)
@@ -310,16 +312,7 @@ class LTNConverter:
         self.yaml = yaml
         self.device = device
 
-    def parse(self, expression):
-        expression = self.parser.parse(expression)
-        self.expression = expression
-        return expression
-        
-    def __call__(self, expression):
-        expression = self.parser.parse(expression)
-    
-        self.expression = expression
-        visitor = ExpressionVisitor(
+        self.visitor = ExpressionVisitor(
             self.yaml,
             self.predicates, 
             self.functions, 
@@ -329,5 +322,13 @@ class LTNConverter:
             declarers=self.declarers,
             device=self.device
         )
-
-        return ConvertedExpression(self.expression, expression.accept(visitor), visitor, device=self.device)
+        
+    def parse(self, expression):
+        expression = self.parser.parse(expression)
+        self.expression = expression
+        return expression
+        
+    def __call__(self, expression):
+        expression = self.parser.parse(expression)
+        self.expression = expression
+        return ConvertedExpression(self.expression, expression.accept(self.visitor), self.visitor, device=self.device)

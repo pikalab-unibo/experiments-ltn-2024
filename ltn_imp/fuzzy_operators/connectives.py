@@ -218,14 +218,14 @@ class TanEqConnective(EqConnective): # This returns a tensor of the form [ [0], 
         # Perform the operation
         result = 1 - torch.tanh(2 * torch.abs(torch.sub(a,b)))**2        
         return result
-    
-class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0, 1, 0, 1, 0, 1, ...]
+
+class SqrtEqConnective(EqConnective):  
     def __init__(self):
         super().__init__(self.implementation)
-
-    def implementation(self, a, b):
+        self.k = torch.nn.Parameter(torch.tensor([0.05], dtype=torch.float32))
         
-        # Ensure a and b have the samzaze shape and are at least 2D tensors
+    def implementation(self, a, b):
+        # Ensure both a and b have the correct dimensions
         if a.ndim == 0:
             a = a.unsqueeze(0)
         if b.ndim == 0:
@@ -235,74 +235,63 @@ class SqrtEqConnective(EqConnective):  # This returns a tensor in the form [ 0,
         if b.ndim == 1:
             b = b.unsqueeze(1)
 
-        alpha = 0.005  # You can adjust the value of alpha as needed
-        result = torch.exp(-alpha * torch.sqrt(torch.sum(torch.square(a - b), dim=1)))
-
+        distance = torch.sqrt(torch.sum(torch.square(a - b), dim=1))
+        result = torch.exp(- torch.abs(self.k) * distance) 
         return result
     
 DefaultEqConnective = SqrtEqConnective
 
+def normalize_min_max(tensor1, tensor2, epsilon=1e-8):
+    if tensor2.dim() == 0:
+        tensor2 = tensor2.unsqueeze(0)
+
+    if tensor1.dim() > tensor2.dim():
+        tensor2 = tensor2.unsqueeze(-1).expand_as(tensor1)
+    elif tensor2.dim() > tensor1.dim():
+        tensor1 = tensor1.unsqueeze(-1).expand_as(tensor2)
+
+    combined_min = torch.min(torch.cat((tensor1, tensor2)))
+    combined_max = torch.max(torch.cat((tensor1, tensor2)))
+    
+    range_ = combined_max - combined_min + epsilon  # Adding epsilon to prevent division by zero
+    tensor1_normalized = (tensor1 - combined_min) / range_
+    tensor2_normalized = (tensor2 - combined_min) / range_
+    
+    return tensor1_normalized, tensor2_normalized
+
 # LessThan Connective
 class LessThanConnective(BinaryConnective):
-    def __init__(self, k=10):
-        self.k = k
+    def __init__(self, k = None):
         super().__init__(self.implementation)
-
-    def normalize_min_max(self, tensor1, tensor2):
-        
-        if tensor2.dim() == 0:
-            tensor2 = tensor2.unsqueeze(0)
-
-        if tensor1.dim() > tensor2.dim():
-            tensor2 = tensor2.unsqueeze(-1).expand_as(tensor1)
-        elif tensor2.dim() > tensor1.dim():
-            tensor1 = tensor1.unsqueeze(-1).expand_as(tensor2)
-
-        combined_min = torch.min(torch.cat((tensor1, tensor2)))
-        combined_max = torch.max(torch.cat((tensor1, tensor2)))
-        tensor1_normalized = (tensor1 - combined_min) / (combined_max - combined_min)
-        tensor2_normalized = (tensor2 - combined_min) / (combined_max - combined_min)
-        return tensor1_normalized, tensor2_normalized
+        if k is None:
+            self.k = torch.nn.Parameter(torch.tensor([10.0], dtype=torch.float32))
+        else:
+            self.k = k
 
     def implementation(self, tensor1, tensor2):
-        tensor1_normalized, tensor2_normalized = self.normalize_min_max(tensor1, tensor2)
+        tensor1_normalized, tensor2_normalized = normalize_min_max(tensor1, tensor2)
         result = torch.sigmoid(self.k * (tensor2_normalized - tensor1_normalized))
         return result
-
-    
 class DefaultLessThanConnective(LessThanConnective):
     pass
 
 # MoreThan Connective
 class MoreThanConnective(BinaryConnective):
-    def __init__(self, k=10):
-        self.k = k
+    def __init__(self, k = None):
         super().__init__(self.implementation)
-
-    def normalize_min_max(self, tensor1, tensor2):
-        
-        if tensor2.dim() == 0:
-            tensor2 = tensor2.unsqueeze(0)
-
-        if tensor1.dim() > tensor2.dim():
-            tensor2 = tensor2.unsqueeze(-1).expand_as(tensor1)
-        elif tensor2.dim() > tensor1.dim():
-            tensor1 = tensor1.unsqueeze(-1).expand_as(tensor2)
-
-        combined_min = torch.min(torch.cat((tensor1, tensor2)))
-        combined_max = torch.max(torch.cat((tensor1, tensor2)))
-        tensor1_normalized = (tensor1 - combined_min) / (combined_max - combined_min)
-        tensor2_normalized = (tensor2 - combined_min) / (combined_max - combined_min)
-        return tensor1_normalized, tensor2_normalized
+        if k is None:
+            self.k = torch.nn.Parameter(torch.tensor([10.0], dtype=torch.float32))
+        else:
+            self.k = k
 
     def implementation(self, tensor1, tensor2):
-        tensor1_normalized, tensor2_normalized = self.normalize_min_max(tensor1, tensor2)
+        tensor1_normalized, tensor2_normalized = normalize_min_max(tensor1, tensor2)
         result = torch.sigmoid(self.k * (tensor1_normalized - tensor2_normalized))
         return result
 
-
 class DefaultMoreThanConnective(MoreThanConnective):
  pass
+
 
 # Add Connective
 class AddConnective(BinaryConnective):

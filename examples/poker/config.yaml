@@ -1,0 +1,75 @@
+
+instances:
+  - hand
+  - label
+
+features:
+  hand:
+    - S1
+    - C1
+    - S2
+    - C2
+    - S3
+    - C3
+    - S4
+    - C4
+    - S5
+    - C5
+  label:
+    - Label
+
+
+train:
+  poker:
+    instances: [hand]
+    targets: [label]
+    path: datasets/train.csv
+    batch_size: 512
+
+validation:
+  poker:
+    instances: [hand]
+    targets: [label]
+    path: datasets/val.csv
+    batch_size: 1024
+
+test:
+  poker:
+    instances: [hand]
+    targets: [label]
+    path: datasets/test.csv
+    batch_size: 1024
+
+
+predicates:
+  PokerHand:
+    args: [hand]
+    structure:
+      type: feed-forward
+      layers:
+        - in: [hand, 128] 
+          activation: leaky_relu
+          regularization: 
+            - batch_norm: True
+
+        - hidden: [128, 64]
+          activation: leaky_relu
+          regularization: 
+            - batch_norm: True
+
+        - out: [64, 10]
+          activation: softmax 
+
+
+constraints:
+  - rule: all hand. PokerHand(hand, output)
+  - rule: all hand. ((label == 0) -> output[0])
+  - rule: all hand. ((label == 1) -> output[1])
+  - rule: all hand. ((label == 2) -> output[2])
+  - rule: all hand. ((label == 3) -> output[3])
+  - rule: all hand. ((label == 4) -> output[4])
+  - rule: all hand. ((label == 5) -> output[5])
+  - rule: all hand. ((label == 6) -> output[6])
+  - rule: all hand. ((label == 7) -> output[7])
+  - rule: all hand. ((label == 8) -> output[8])
+  - rule: all hand. ((label == 9) -> output[9])

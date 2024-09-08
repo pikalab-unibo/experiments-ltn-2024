@@ -34,4 +34,4 @@ predicates:
           activation: elu
 
 constraints: 
-- rule: "forall x. (y = Regressor(x))"
+- rule: "forall x. (Regressor(x) = y)"

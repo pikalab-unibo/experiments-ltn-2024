@@ -1,6 +1,7 @@
 import torch 
 from ltn_imp.fuzzy_operators.aggregators import SatAgg
 from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper
+from ltn_imp.parsing.expressions import LessThanExpression, MoreThanExpression, EqualityExpression
 from ltn_imp.parsing.parser import LTNConverter
 from ltn_imp.parsing.ancillary_modules import ModuleFactory
 from ltn_imp.automation.network_factory import NNFactory
@@ -169,13 +170,16 @@ class KnowledgeBase:
         )
         loss = 1.0 - sat_agg_value
         return loss
-    
+        
     def parameters(self):
         params = []
         for model in self.predicates.values():
             if hasattr(model, 'parameters'):
                 params += list(model.parameters())
-        
+
+        params.append(self.converter.visitor.connective_map[MoreThanExpression].k)
+        params.append(self.converter.visitor.connective_map[LessThanExpression].k)
+        params.append(self.converter.visitor.connective_map[EqualityExpression].k)
         return params
     
     def partition_data(self, var_mapping, batch, loader):
@@ -211,7 +215,8 @@ class KnowledgeBase:
     
         try:
             self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
-        except:
+        except Exception as e:
+            print(e)
             print("No parameters to optimize")
             return
 
