@@ -1,6 +1,7 @@
 from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective, EqConnective, AddConnective, SubtractConnective, MultiplyConnective, DivideConnective, LessThanConnective, MoreThanConnective, LessThanOrEqualConnective, MoreThanOrEqualConnective, NegativeConnective
 from ltn_imp.fuzzy_operators.predicates import Predicate
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
+from ltn_imp.fuzzy_operators.connectives import SqrtEqConnective, LessThanConnective, MoreThanConnective, LessThanOrEqualConnective, MoreThanOrEqualConnective
 from ltn_imp.visitor import Visitor, make_visitable
 import ltn_imp.fuzzy_operators.connectives as Connectives
 
@@ -110,26 +111,25 @@ class ExpressionVisitor(Visitor):
         Not = get_subclass_with_prefix(module=Connectives, superclass=NotConnective, prefix=connective_impls.get('not', 'default'))
         Implies = get_subclass_with_prefix(module=Connectives, superclass=ImpliesConnective, prefix=connective_impls.get('implies', 'default'))
         Equiv = get_subclass_with_prefix(module=Connectives, superclass=IffConnective, prefix=connective_impls.get('iff', 'default'))
-
-        Eq_Regression = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_reg', 'default'))
-        Eq_Classification = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_class', 'tan'))        
-
+   
         Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
         Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'pmean_error'))
 
         Add = get_subclass_with_prefix(module=Connectives, superclass=AddConnective, prefix=functions.get('add', 'default'))
         Subtract = get_subclass_with_prefix(module=Connectives, superclass=SubtractConnective, prefix=functions.get('sub', 'default'))
         Multiply = get_subclass_with_prefix(module=Connectives, superclass=MultiplyConnective, prefix=functions.get('mul', 'default'))
-        Divide = get_subclass_with_prefix(module=Connectives, superclass=DivideConnective, prefix=functions.get('div', 'default'))
-
-        LessThan = get_subclass_with_prefix(module=Connectives, superclass=LessThanConnective, prefix=predicates.get('lt', 'default'))
-        MoreThan = get_subclass_with_prefix(module=Connectives, superclass=MoreThanConnective, prefix=predicates.get('gt', 'default'))
-
-        LessThanEqual = get_subclass_with_prefix(module=Connectives, superclass=LessThanOrEqualConnective, prefix=predicates.get('le', 'default'))
-        MoreThanEqual = get_subclass_with_prefix(module=Connectives, superclass=MoreThanOrEqualConnective, prefix=predicates.get('ge', 'default'))
-
+        Divide = get_subclass_with_prefix(module=Connectives, superclass=DivideConnective, prefix=functions.get('div', 'default'))    
         Negative = get_subclass_with_prefix(module=Connectives, superclass=NegativeConnective, prefix=connective_impls.get('neg', 'default'))
+        Eq_Classification = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_class', 'tan')) 
+
+        self.learnable_connectives = {  EqualityExpression :SqrtEqConnective,
+                                        LessThanExpression : LessThanConnective,
+                                        MoreThanExpression : MoreThanConnective,
+                                        LessEqualExpression : LessThanOrEqualConnective, 
+                                        MoreEqualExpression : MoreThanOrEqualConnective}
         
+        self.comparision_operators = []
+
         self.connective_map = {
             AndExpression: And,
             OrExpression: Or,
@@ -137,16 +137,11 @@ class ExpressionVisitor(Visitor):
             IffExpression: Equiv,
             NegatedExpression: Not,
             NegativeExpression: Negative,
-            EqualityExpression: Eq_Regression,
             DirectEqualityExpression : Eq_Classification, 
             AdditionExpression: Add,
             SubtractionExpression: Subtract,
             MultiplicationExpression: Multiply,
             DivisionExpression: Divide,
-            LessThanExpression: LessThan,
-            MoreThanExpression: MoreThan,
-            LessEqualExpression: LessThanEqual, # Still Problematic
-            MoreEqualExpression: MoreThanEqual  # Still Problematic
         }
 
         self.quantifier_map = {
@@ -234,7 +229,12 @@ class ExpressionVisitor(Visitor):
         return connective(left_value, right_value)
         
     def visit_BinaryExpression(self, expression):
-        connective = self.connective_map.get(type(expression))
+        if type(expression) in self.learnable_connectives:
+            connective = self.learnable_connectives.get(type(expression))()
+            self.comparision_operators.append(connective)
+        else:
+            connective = self.connective_map.get(type(expression))
+
         if connective:
             left = self.visit(expression.left)
             right = self.visit(expression.right)

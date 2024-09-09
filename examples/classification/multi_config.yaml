@@ -39,6 +39,7 @@ predicates:
           activation: softmax 
 
 constraints: 
-- rule: all flower. ((species == setosa) -> Iris(flower, output) and output[0])
-- rule: all flower. ((species == versicolor) -> Iris(flower, output) and output[1])
-- rule: all flower. ((species == virginica) -> Iris(flower, output) and output[2])
+- rule: all flower. Iris(flower, output)
+- rule: all flower. ((species == setosa) -> output[0])
+- rule: all flower. ((species == versicolor) -> output[1])
+- rule: all flower. ((species == virginica) -> output[2])

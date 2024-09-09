@@ -177,9 +177,9 @@ class KnowledgeBase:
             if hasattr(model, 'parameters'):
                 params += list(model.parameters())
 
-        params.append(self.converter.visitor.connective_map[MoreThanExpression].k)
-        params.append(self.converter.visitor.connective_map[LessThanExpression].k)
-        params.append(self.converter.visitor.connective_map[EqualityExpression].k)
+        for param in self.converter.visitor.comparision_operators:
+            params.append(param.k)
+
         return params
     
     def partition_data(self, var_mapping, batch, loader):
