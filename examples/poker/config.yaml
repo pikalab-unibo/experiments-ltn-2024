@@ -31,14 +31,14 @@ validation:
     instances: [hand]
     targets: [label]
     path: datasets/val.csv
-    batch_size: 1024
+    batch_size: 100000
 
 test:
   poker:
     instances: [hand]
     targets: [label]
     path: datasets/test.csv
-    batch_size: 1024
+    batch_size: 100000
 
 
 predicates:
@@ -60,16 +60,122 @@ predicates:
         - out: [64, 10]
           activation: softmax 
 
+constants:
+  - zero : 0
+  - one : 1
+  - two : 2
+  - three : 3
+  - four : 4
+  - five : 5
+  - six : 6
+  - seven : 7
+  - eight : 8
+  - nine : 9
+
+knowledge:
+  # Pair Detection
+  - rule: Pair
+    args: [hand]
+    clause: (hand[C1] == hand[C2] or hand[C1] == hand[C3] or hand[C1] == hand[C4] or hand[C1] == hand[C5] or 
+            hand[C2] == hand[C3] or hand[C2] == hand[C4] or hand[C2] == hand[C5] or hand[C3] == hand[C4] or hand[C3] == hand[C5] or hand[C4] == hand[C5])
+
+  # Two Pair Detection
+  - rule: Two_pairs
+    args: [hand]
+    clause: ((hand[C1] == hand[C2] and (hand[C3] == hand[C4] or hand[C3] == hand[C5] or hand[C4] == hand[C5])) or 
+            (hand[C1] == hand[C3] and (hand[C2] == hand[C4] or hand[C2] == hand[C5] or hand[C4] == hand[C5])) or
+            (hand[C1] == hand[C4] and (hand[C2] == hand[C3] or hand[C2] == hand[C5] or hand[C3] == hand[C5])) or
+            (hand[C1] == hand[C5] and (hand[C2] == hand[C3] or hand[C2] == hand[C4] or hand[C3] == hand[C4])))
+
+  # Three of a Kind Detection
+  - rule: Three_of_a_kind
+    args: [hand]
+    clause: ((hand[C1] == hand[C2] and hand[C1] == hand[C3]) or
+            (hand[C1] == hand[C2] and hand[C1] == hand[C4]) or
+            (hand[C1] == hand[C2] and hand[C1] == hand[C5]) or
+            (hand[C1] == hand[C3] and hand[C1] == hand[C4]) or
+            (hand[C1] == hand[C3] and hand[C1] == hand[C5]) or
+            (hand[C1] == hand[C4] and hand[C1] == hand[C5]) or
+            (hand[C2] == hand[C3] and hand[C2] == hand[C4]) or
+            (hand[C2] == hand[C3] and hand[C2] == hand[C5]) or
+            (hand[C2] == hand[C4] and hand[C2] == hand[C5]) or
+            (hand[C3] == hand[C4] and hand[C3] == hand[C5]))
+
+  # Straight Detection (Consecutive Ranks)
+  - rule: Straight
+    args: [hand]
+    clause: ((hand[C1] == hand[C2] + 1 and hand[C2] == hand[C3] + 1 and hand[C3] == hand[C4] + 1 and hand[C4] == hand[C5] + 1) or 
+            (hand[C1] == hand[C2] - 1 and hand[C2] == hand[C3] - 1 and hand[C3] == hand[C4] - 1 and hand[C4] == hand[C5] - 1))
+
+  # Flush Detection (Same Suit)
+  - rule: Flush
+    args: [hand]
+    clause: (hand[S1] == hand[S2] and hand[S1] == hand[S3] and hand[S1] == hand[S4] and hand[S1] == hand[S5])
+
+  # Full House Detection (Three of a Kind and a Pair)
+  - rule: Full_house
+    args: [hand]
+    clause: (Three_of_a_kind(hand) and Pair(hand))
+
+  # Four of a Kind Detection
+  - rule: Four_of_a_kind
+    args: [hand]
+    clause: ((hand[C1] == hand[C2] and hand[C1] == hand[C3] and hand[C1] == hand[C4]) or
+            (hand[C1] == hand[C2] and hand[C1] == hand[C3] and hand[C1] == hand[C5]) or
+            (hand[C1] == hand[C2] and hand[C1] == hand[C4] and hand[C1] == hand[C5]) or
+            (hand[C1] == hand[C3] and hand[C1] == hand[C4] and hand[C1] == hand[C5]) or
+            (hand[C2] == hand[C3] and hand[C2] == hand[C4] and hand[C2] == hand[C5]))
+
+  # Straight Flush Detection (Straight and Flush)
+  - rule: Straight_flush
+    args: [hand]
+    clause: (Straight(hand) and Flush(hand))
+
+  # Royal Flush Detection (Straight Flush with Ace High)
+  - rule: Royal_flush
+    args: [hand]
+    clause: (Straight_flush(hand) and hand[C1] == 14)
+
+
 
 constraints:
   - rule: all hand. PokerHand(hand, output)
-  - rule: all hand. ((label == 0) -> output[0])
-  - rule: all hand. ((label == 1) -> output[1])
-  - rule: all hand. ((label == 2) -> output[2])
-  - rule: all hand. ((label == 3) -> output[3])
-  - rule: all hand. ((label == 4) -> output[4])
-  - rule: all hand. ((label == 5) -> output[5])
-  - rule: all hand. ((label == 6) -> output[6])
-  - rule: all hand. ((label == 7) -> output[7])
-  - rule: all hand. ((label == 8) -> output[8])
-  - rule: all hand. ((label == 9) -> output[9])
+
+  # General Classification
+  - rule: all hand. ((label == zero) -> output[0])
+  - rule: all hand. ((label == one) -> output[1])
+  - rule: all hand. ((label == two) -> output[2])
+  - rule: all hand. ((label == three) -> output[3])
+  - rule: all hand. ((label == four) -> output[4])
+  - rule: all hand. ((label == five) -> output[5])
+  - rule: all hand. ((label == six) -> output[6])
+  - rule: all hand. ((label == seven) -> output[7])
+  - rule: all hand. ((label == eight) -> output[8])
+  - rule: all hand. ((label == nine) -> output[9])
+  
+ # Royal Flush (most specific)
+  - rule: all hand. (Royal_flush(hand) -> output[9])
+
+  # Straight Flush (exclude Royal Flush)
+  - rule: all hand. (not Royal_flush(hand) and Straight_flush(hand) -> output[8])
+
+  # Four of a Kind (exclude Straight Flush)
+  - rule: all hand. (not Royal_flush(hand) and not Straight_flush(hand) and Four_of_a_kind(hand) -> output[7])
+
+  # Full House (exclude Four of a Kind)
+  - rule: all hand. (not Royal_flush(hand) and not Straight_flush(hand) and not Four_of_a_kind(hand) and Full_house(hand) -> output[6])
+
+  # Flush (no overlap with pair-based hands, no negation needed)
+  - rule: all hand. (Flush(hand) -> output[5])
+
+  # Straight (no overlap with pair-based hands, no negation needed)
+  - rule: all hand. (Straight(hand) -> output[4])
+
+  # Three of a Kind (exclude Full House and Four of a Kind)
+  - rule: all hand. (not Full_house(hand) and not Four_of_a_kind(hand) and Three_of_a_kind(hand) -> output[3])
+
+  # Two Pairs (exclude Three of a Kind)
+  - rule: all hand. (not Three_of_a_kind(hand) and Two_pairs(hand) -> output[2])
+
+  # Pair (exclude Two Pairs, Three of a Kind, Full House)
+  - rule: all hand. (not Two_pairs(hand) and not Three_of_a_kind(hand) and not Full_house(hand) and Pair(hand) -> output[1])
