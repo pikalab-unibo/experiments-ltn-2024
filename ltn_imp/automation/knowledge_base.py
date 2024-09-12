@@ -210,6 +210,23 @@ class KnowledgeBase:
                 rule_outputs.append(torch.mean(torch.stack(rule_output)))
             validation_loss = self.loss(rule_outputs)
         return validation_loss
+    
+    def compute_test_loss(self):
+        with torch.no_grad():
+            rule_outputs = []
+            for rule in self.rules:
+                rule_output = []
+                var_mapping = {}
+                if self.test_loaders:
+                    for loader in self.test_loaders:
+                        for batch in loader:
+                            self.partition_data(var_mapping, batch, loader)
+                            rule_output.append(rule(var_mapping))
+                else:
+                    rule_output.append(rule(var_mapping))
+                rule_outputs.append(torch.mean(torch.stack(rule_output)))
+            test_loss = self.loss(rule_outputs)
+        return test_loss
 
     def optimize(self, num_epochs=10, log_steps=10, lr=0.001, early_stopping=False, patience=5, min_delta=0.0, weight_decay=0.0, verbose = True):
     
@@ -252,12 +269,13 @@ class KnowledgeBase:
 
             if epoch % log_steps == 0 and verbose:
                 validation_loss = self.compute_validation_loss() if self.val_loaders else None
-                print([str(rule) for rule in self.rules])
+
+                for rule, outcome in zip(self.rules, rule_outputs):
+                    print(f"Rule: {rule}, Outcome: {outcome}")
+                
                 if validation_loss is not None:
-                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                 else:
-                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}")
                 print()
 
@@ -271,6 +289,7 @@ class KnowledgeBase:
                     epochs_no_improve += 1
 
                 if epochs_no_improve >= patience:
-                    print("Rule Outputs: ", rule_outputs)
+                    for rule, outcome in zip(self.rules, rule_outputs):
+                        print(f"Rule: {rule}, Outcome: {outcome}")
                     print(f"Early stopping at Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                     break

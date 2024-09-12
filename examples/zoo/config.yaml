@@ -3,6 +3,7 @@ instances:
   - label
 
 features:
+
   animal:
     - hair
     - feathers
@@ -20,6 +21,7 @@ features:
     - tail
     - domestic
     - catsize
+
   label:
     - Label
 
@@ -29,13 +31,6 @@ train:
     targets: [label]
     path: datasets/train.csv
     batch_size: 32
-
-validation:
-  zoo:
-    instances: [animal]
-    targets: [label]
-    path: datasets/val.csv
-    batch_size: 100000
 
 test:
   zoo:
@@ -50,22 +45,22 @@ predicates:
     structure:
       type: feed-forward
       layers:
-        - in: [animal, 256] 
+        - in: [animal, 512] 
           activation: leaky_relu
-          regularization: 
-            - batch_norm: True
+          regularization:
+          -  dropout: 0.46411367504928136
 
-        - hidden: [256, 128]
+        - hidden: [512, 256] 
           activation: leaky_relu
-          regularization: 
-            - batch_norm: True
+          regularization:
+          -  dropout: 0.46411367504928136
 
-        - hidden: [128, 64]
+        - hidden: [256, 128]  
           activation: leaky_relu
-          regularization: 
-            - batch_norm: True
+          regularization:
+          -  dropout: 0.46411367504928136
 
-        - out: [64, 7]
+        - out: [128, 7] 
           activation: softmax
 
 constants:
@@ -81,37 +76,38 @@ knowledge:
   # Mammal Detection
   - rule: Mammal
     args: [animal]
-    clause: (animal[hair] == 1 and animal[milk] == 1 and animal[eggs] == 0)
+    clause: ((animal[hair] == 1) and (animal[milk] == 1) and (animal[eggs] == 0))
 
   # Bird Detection
   - rule: Bird
     args: [animal]
-    clause: (animal[feathers] == 1 and animal[airborne] == 1 and animal[eggs] == 1)
+    clause: ((animal[feathers] == 1) and (animal[airborne] == 1) and (animal[eggs] == 1))
 
   # Reptile Detection
   - rule: Reptile
     args: [animal]
-    clause: (animal[eggs] == 1 and animal[milk] == 0 and animal[venomous] == 1)
+    clause: ((animal[eggs] == 1) and (animal[milk] == 0) and (animal[venomous] == 1))
 
   # Fish Detection
   - rule: Fish
     args: [animal]
-    clause: (animal[aquatic] == 1 and animal[eggs] == 1 and animal[fins] == 1)
+    clause: ((animal[aquatic] == 1) and (animal[eggs] == 1) and (animal[fins] == 1))
 
   # Amphibian Detection
   - rule: Amphibian
     args: [animal]
-    clause: (animal[breathes] == 1 and animal[eggs] == 1 and animal[legs] == 4)
+    clause: ((animal[breathes] == 1) and (animal[eggs] == 1) and (animal[legs] == 4))
 
   # Insect Detection
   - rule: Insect
     args: [animal]
-    clause: (animal[legs] == 6 and animal[venomous] == 0 and animal[toothed] == 0)
+    clause: ((animal[legs] == 6) and (animal[venomous] == 0) and (animal[toothed] == 0))
 
   # Invertebrate Detection
   - rule: Invertebrate
     args: [animal]
-    clause: (animal[backbone] == 0 and animal[legs] == 0)
+    clause: ((animal[backbone] == 0) and (animal[legs] == 0))
+
 
 constraints:
   - rule: all animal. AnimalClass(animal, output)
@@ -125,7 +121,7 @@ constraints:
   - rule: all animal. ((label == insect) -> output[5])
   - rule: all animal. ((label == invertebrate) -> output[6])
 
-  # Logic Rules 
+  # Logic Rules
   - rule: all animal. (Mammal(animal) -> output[0])
   - rule: all animal. (Bird(animal) -> output[1])
   - rule: all animal. (Reptile(animal) -> output[2])
