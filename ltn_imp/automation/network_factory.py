@@ -1,10 +1,55 @@
+import torch
 import torch.nn as nn
+
+class LogicTensorNetwork:
+    def __init__(self, arguments, model):
+        self.args = arguments 
+        self.model = model     
+
+    def __call__(self, *args):
+        if len(args) != len(self.args):
+            raise ValueError(f"Expected {len(self.args)} arguments, but got {len(args)}.")
+        
+        input_tensor = torch.cat(args, dim=1)
+        return self.model(input_tensor)
+    
+    def parameters(self):
+        return self.model.parameters()
+    
+    def float(self):
+        self.model = self.model.float() 
+        return self
+    
+    def to(self, device):
+        self.model = self.model.to(device)  # Move model to the specified device
+        return self 
+    
+    def eval(self):
+        self.model = self.model.eval()
+        return self
+
+    def train(self):
+        self.model = self.model.train()
+        return self
+    
+    def forward(self, *args):
+        return self(*args)
+    
+    def state_dict(self):
+        return self.model.state_dict()
+    
+    def load_state_dict(self, state_dict):
+        self.model.load_state_dict(state_dict)
+        return self
+    
+    def __repr__(self):
+        return f"<LogicTensorNetwork: {self.args}>"
 
 class NNFactory:
     def __init__(self):
         pass
     
-    def __call__(self, layers, activations, regularizations):
+    def __call__(self, arguments, layers, activations, regularizations):
         network_layers = []
 
         for (in_size, out_size), activation, regularization_list in zip(layers, activations, regularizations):
@@ -23,7 +68,8 @@ class NNFactory:
             if activation is not None:
                 network_layers.append(self._get_activation(activation))
         
-        return nn.Sequential(*network_layers)
+        model = nn.Sequential(*network_layers)
+        return LogicTensorNetwork(arguments, model)
     
     def _get_activation(self, activation):
         activations = {

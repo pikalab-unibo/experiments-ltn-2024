@@ -88,7 +88,10 @@ class KnowledgeBase:
                 activations.append(activation)
                 regularizations.append(regularization)
 
+            arguments = predicate_info["args"]
+
             network = self.factory(
+                arguments=arguments,
                 layers=layers,
                 activations=activations,
                 regularizations=regularizations

@@ -1,0 +1,364 @@
+instances:
+  - smoker
+  - person
+  - patient
+  - friend
+
+  - smoke
+  - friends
+  - cancer
+
+features:
+  smoker:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+        - 21
+        - 22
+        - 23
+        - 24
+        - 25
+        - 26
+        - 27
+        - 28
+        - 29
+        - 30
+        - 31
+        - 32
+        - 33
+        - 34
+        - 35
+        - 36
+        - 37
+        - 38
+        - 39
+        - 40
+        - 41
+        - 42
+        - 43
+        - 44
+        - 45
+        - 46
+        - 47
+        - 48
+        - 49
+        
+  person:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+        - 21
+        - 22
+        - 23
+        - 24
+        - 25
+        - 26
+        - 27
+        - 28
+        - 29
+        - 30
+        - 31
+        - 32
+        - 33
+        - 34
+        - 35
+        - 36
+        - 37
+        - 38
+        - 39
+        - 40
+        - 41
+        - 42
+        - 43
+        - 44
+        - 45
+        - 46
+        - 47
+        - 48
+        - 49
+
+  patient:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        - 19
+        - 20
+        - 21
+        - 22
+        - 23
+        - 24
+        - 25
+        - 26
+        - 27
+        - 28
+        - 29
+        - 30
+        - 31
+        - 32
+        - 33
+        - 34
+        - 35
+        - 36
+        - 37
+        - 38
+        - 39
+        - 40
+        - 41
+        - 42
+        - 43
+        - 44
+        - 45
+        - 46
+        - 47
+        - 48
+        - 49
+  
+  friend:
+        - 50
+        - 51
+        - 52
+        - 53
+        - 54
+        - 55
+        - 56
+        - 57
+        - 58
+        - 59
+        - 60
+        - 61
+        - 62
+        - 63
+        - 64
+        - 65
+        - 66
+        - 67
+        - 68
+        - 69
+        - 70
+        - 71
+        - 72
+        - 73
+        - 74
+        - 75
+        - 76
+        - 77
+        - 78
+        - 79
+        - 80
+        - 81
+        - 82
+        - 83
+        - 84
+        - 85
+        - 86
+        - 87
+        - 88
+        - 89
+        - 90
+        - 91
+        - 92
+        - 93
+        - 94
+        - 95
+        - 96
+        - 97
+        - 98
+        - 99
+      
+  smoke:
+        - 50
+
+  cancer:
+        - 50
+
+  friends:
+        - 100
+      
+
+train:
+  smokes:
+    instances: [smoker]
+    targets: [smoke]
+    path: datasets/smokes/train.csv
+    batch_size: 16
+
+  friends:
+    instances: [person, friend]
+    targets: [friends]
+    path: datasets/friends/train.csv
+    batch_size: 16
+
+  cancer:
+    instances: [patient]
+    targets: [cancer]
+    path: datasets/cancer/train.csv
+    batch_size: 16
+  
+test:
+  smokes:
+    instances: [smoker]
+    targets: [smoke]
+    path: datasets/smokes/train.csv
+    batch_size: 200
+
+  friends:
+    instances: [person, friend]
+    targets: [friends]
+    path: datasets/friends/train.csv
+    batch_size: 200
+
+  cancer:
+    instances: [patient]
+    targets: [cancer]
+    path: datasets/cancer/train.csv
+    batch_size: 200
+
+predicates:
+
+  Smokes:
+    args: [smoker]
+    structure:
+      type: feed-forward
+      layers:
+        - input: [smoker, 512]
+          activation: leaky_relu
+          regularization:
+          - dropout: 0.41240378588877513
+          - batch_norm: false
+
+        - hidden: [512, 256]
+          activation: leaky_relu
+          regularization:
+          - batch_norm: false
+          - dropout: 0.41240378588877513
+
+        - hidden: [256, 128]
+          activation: leaky_relu
+          regularization:
+          - batch_norm: false
+          - dropout: 0.41240378588877513
+
+        - out: [128, 1]
+          activation: sigmoid
+
+  Friends:
+    args: [person, friend]
+    structure:
+      type: feed-forward
+      layers:
+        - input: [person + friend, 512]
+          activation: leaky_relu
+          regularization:
+          - dropout: 0.41240378588877513
+          - batch_norm: false
+
+        - hidden: [512, 256]
+          activation: leaky_relu
+          regularization:
+          - batch_norm: false
+          - dropout: 0.41240378588877513
+
+        - hidden: [256, 128]
+          activation: leaky_relu
+          regularization:
+          - batch_norm: false
+          - dropout: 0.41240378588877513
+
+        - out: [128, 1]
+          activation: sigmoid
+
+  Cancer:
+    args: [patient]
+    structure:
+      type: feed-forward
+      layers:
+        - input: [patient, 512]
+          activation: leaky_relu
+          regularization:
+          - dropout: 0.41240378588877513
+          - batch_norm: false
+
+        - hidden: [512, 256]
+          activation: leaky_relu
+          regularization:
+          - batch_norm: false
+          - dropout: 0.41240378588877513
+
+        - hidden: [256, 128]
+          activation: leaky_relu
+          regularization:
+          - batch_norm: false
+          - dropout: 0.41240378588877513
+
+        - out: [128, 1]
+          activation: sigmoid
+
+constants:
+  - one : 1
+  - zero : 0
+
+constraints: 
+  #  Classification Rules 
+  - rule : "forall smoker. ( smoke == one -> Smokes(smoker))"
+  - rule: "forall smoker. ( smoke == zero -> not Smokes(smoker))"
+
+  - rule : "forall person, friend. ( friends == one -> Friends(person, friend))"
+  - rule: "forall person, friend. ( friends == zero -> not Friends(person, friend))"
+
+  - rule : "forall patient. ( cancer == one -> Cancer(patient))"
+  - rule: "forall patient. ( cancer == zero -> not Cancer(patient))"
+  
+  #  Logical Rules
+  - rule: "forall parient, friend. (Friends(patient, friend) and Smokes(friend) -> Cancer(patient))"
