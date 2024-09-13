@@ -232,19 +232,19 @@ train:
     instances: [smoker]
     targets: [smoke]
     path: datasets/smokes/train.csv
-    batch_size: 16
+    batch_size: 32
 
   friends:
     instances: [person, friend]
     targets: [friends]
     path: datasets/friends/train.csv
-    batch_size: 16
+    batch_size: 32
 
   cancer:
     instances: [patient]
     targets: [cancer]
     path: datasets/cancer/train.csv
-    batch_size: 16
+    batch_size: 32
   
 test:
   smokes:
@@ -275,22 +275,9 @@ predicates:
         - input: [smoker, 512]
           activation: leaky_relu
           regularization:
-          - dropout: 0.41240378588877513
-          - batch_norm: false
+          - dropout: 0.3481084035911866
 
-        - hidden: [512, 256]
-          activation: leaky_relu
-          regularization:
-          - batch_norm: false
-          - dropout: 0.41240378588877513
-
-        - hidden: [256, 128]
-          activation: leaky_relu
-          regularization:
-          - batch_norm: false
-          - dropout: 0.41240378588877513
-
-        - out: [128, 1]
+        - out: [512, 1]
           activation: sigmoid
 
   Friends:
@@ -301,22 +288,9 @@ predicates:
         - input: [person + friend, 512]
           activation: leaky_relu
           regularization:
-          - dropout: 0.41240378588877513
-          - batch_norm: false
+          - dropout: 0.3481084035911866
 
-        - hidden: [512, 256]
-          activation: leaky_relu
-          regularization:
-          - batch_norm: false
-          - dropout: 0.41240378588877513
-
-        - hidden: [256, 128]
-          activation: leaky_relu
-          regularization:
-          - batch_norm: false
-          - dropout: 0.41240378588877513
-
-        - out: [128, 1]
+        - out: [512, 1]
           activation: sigmoid
 
   Cancer:
@@ -327,22 +301,9 @@ predicates:
         - input: [patient, 512]
           activation: leaky_relu
           regularization:
-          - dropout: 0.41240378588877513
-          - batch_norm: false
+          - dropout: 0.3481084035911866
 
-        - hidden: [512, 256]
-          activation: leaky_relu
-          regularization:
-          - batch_norm: false
-          - dropout: 0.41240378588877513
-
-        - hidden: [256, 128]
-          activation: leaky_relu
-          regularization:
-          - batch_norm: false
-          - dropout: 0.41240378588877513
-
-        - out: [128, 1]
+        - out: [512, 1]
           activation: sigmoid
 
 constants:
