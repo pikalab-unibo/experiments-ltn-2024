@@ -46,12 +46,7 @@ predicates:
     structure:
       type: feed-forward
       layers:
-        - in: [person, 512] 
-          activation: leaky_relu
-          regularization: 
-            - batch_norm: True
-
-        - hidden: [512, 256]
+        - in: [person, 256] 
           activation: leaky_relu
           regularization: 
             - batch_norm: True
@@ -61,16 +56,20 @@ predicates:
           regularization: 
             - batch_norm: True
 
-        - out: [128, 1]
+        - hidden: [128, 64]
+          activation: leaky_relu
+          regularization: 
+            - batch_norm: True
+
+        - out: [64, 1]
           activation: sigmoid
 
           
 constraints:
   - rule: "all person. (y == diabetes -> Diabetic(person))"
   - rule: "all person. (y == healthy -> not Diabetic(person))"
-  
+
   - rule: "all person. (((person[BMI] > 29) and (person[Glucose] > 125 )) -> Diabetic(person))"
   - rule: "all person. (((person[BMI] < 26) and (person[Glucose] < 101 )) -> not Diabetic(person))"
-
 
 

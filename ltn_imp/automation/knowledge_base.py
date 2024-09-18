@@ -1,7 +1,6 @@
 import torch 
 from ltn_imp.fuzzy_operators.aggregators import SatAgg
 from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper
-from ltn_imp.parsing.expressions import LessThanExpression, MoreThanExpression, EqualityExpression
 from ltn_imp.parsing.parser import LTNConverter
 from ltn_imp.parsing.ancillary_modules import ModuleFactory
 from ltn_imp.automation.network_factory import NNFactory
@@ -10,7 +9,7 @@ import yaml
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file, device = "cpu", scaler = None):
+    def __init__(self, yaml_file, device = "cpu"):
 
         if device == "cuda" and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -25,12 +24,10 @@ class KnowledgeBase:
             config = yaml.safe_load(file)
         self.config = config
         self.factory = NNFactory()
-        self.scalers = {}
 
         self.set_loaders()
         self.set_val_loaders()
         self.set_test_loaders()
-
         self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
         self.set_converter()
@@ -40,7 +37,7 @@ class KnowledgeBase:
         self.set_rule_to_data_loader_mapping()
 
     def set_converter(self):
-        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device, scalers=self.scalers) 
+        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device) 
 
     def set_constant_mapping(self):
         constants = self.config.get("constants", [])
@@ -84,7 +81,7 @@ class KnowledgeBase:
                 layer_size = layer[layer_type]
                 activation = layer.get('activation', None)
                 regularization = layer.get('regularization', [])
-            
+                
                 in_size, out_size = self.evaluate_layer_size(layer_size, features, args)
                 layers.append((in_size, out_size))
                 activations.append(activation)
@@ -124,20 +121,8 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["train"]:
             dataset = self.config["train"][dataset]
-            scaler_type = self.config["train"].get("scaler", None)
-
-            if scaler_type:
-                loader = LoaderWrapper(dataset, features, device=self.device, scaler_type=scaler_type)
-                self.loaders.append(loader)
-                self.scalers.update(loader.scalers)
-                
-            else:
-                loader = LoaderWrapper(dataset, features, device=self.device)
-                self.loaders.append(loader)
-
-        if len(self.scalers.keys()) == 0:
-            self.scalers = None
-
+            loader = LoaderWrapper(dataset, features, device=self.device)
+            self.loaders.append(loader)
 
     def set_val_loaders(self):
         if "validation" not in self.config:
@@ -147,7 +132,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["validation"]:
             dataset = self.config["validation"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device, scalers=self.scalers)
+            loader = LoaderWrapper(dataset, features, device=self.device)
             self.val_loaders.append(loader)
 
     def set_test_loaders(self):
@@ -158,7 +143,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["test"]:
             dataset = self.config["test"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device, scalers=self.scalers)
+            loader = LoaderWrapper(dataset, features, device=self.device)
             self.test_loaders.append(loader)
         
     def set_rule_to_data_loader_mapping(self):
@@ -181,21 +166,19 @@ class KnowledgeBase:
         for weight, rule_output in zip(self.rule_weights, rule_outputs):
             for _ in range(weight):
                 input.append(rule_output)
-                                
+                             
         sat_agg_value = sat_agg_op(
             *input,
         )
         loss = 1.0 - sat_agg_value
-
-        assert torch.isfinite(loss).all(), f"Loss contains invalid values: {loss}"
-
         return loss
-        
+    
     def parameters(self):
         params = []
         for model in self.predicates.values():
             if hasattr(model, 'parameters'):
                 params += list(model.parameters())
+        
         return params
     
     def partition_data(self, var_mapping, batch, loader):
@@ -226,30 +209,12 @@ class KnowledgeBase:
                 rule_outputs.append(torch.mean(torch.stack(rule_output)))
             validation_loss = self.loss(rule_outputs)
         return validation_loss
-    
-    def compute_test_loss(self):
-        with torch.no_grad():
-            rule_outputs = []
-            for rule in self.rules:
-                rule_output = []
-                var_mapping = {}
-                if self.test_loaders:
-                    for loader in self.test_loaders:
-                        for batch in loader:
-                            self.partition_data(var_mapping, batch, loader)
-                            rule_output.append(rule(var_mapping))
-                else:
-                    rule_output.append(rule(var_mapping))
-                rule_outputs.append(torch.mean(torch.stack(rule_output)))
-            test_loss = self.loss(rule_outputs)
-        return test_loss
 
     def optimize(self, num_epochs=10, log_steps=10, lr=0.001, early_stopping=False, patience=5, min_delta=0.0, weight_decay=0.0, verbose = True):
     
         try:
             self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
-        except Exception as e:
-            print(e)
+        except:
             print("No parameters to optimize")
             return
 
@@ -285,13 +250,12 @@ class KnowledgeBase:
 
             if epoch % log_steps == 0 and verbose:
                 validation_loss = self.compute_validation_loss() if self.val_loaders else None
-
-                for rule, outcome in zip(self.rules, rule_outputs):
-                    print(f"Rule: {rule}, Outcome: {outcome}")
-                
+                print([str(rule) for rule in self.rules])
                 if validation_loss is not None:
+                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                 else:
+                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}")
                 print()
 
@@ -305,7 +269,6 @@ class KnowledgeBase:
                     epochs_no_improve += 1
 
                 if epochs_no_improve >= patience:
-                    for rule, outcome in zip(self.rules, rule_outputs):
-                        print(f"Rule: {rule}, Outcome: {outcome}")
+                    print("Rule Outputs: ", rule_outputs)
                     print(f"Early stopping at Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                     break
