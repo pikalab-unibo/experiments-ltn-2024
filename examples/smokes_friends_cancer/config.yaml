@@ -1,9 +1,12 @@
 instances:
+
+  # Train Instances
   - smoker
   - person
   - patient
   - friend
 
+  # Label Instances
   - smoke
   - friends
   - cancer

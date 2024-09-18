@@ -24,7 +24,7 @@ train:
     instances: [hand]
     targets: [label]
     path: datasets/train.csv
-    batch_size: 512
+    batch_size: 128
 
 validation:
   poker:
@@ -47,17 +47,12 @@ predicates:
     structure:
       type: feed-forward
       layers:
-        - in: [hand, 128] 
+        - in: [hand, 256] 
           activation: leaky_relu
           regularization: 
-            - batch_norm: True
+          dropout: 0.19408016570692213
 
-        - hidden: [128, 64]
-          activation: leaky_relu
-          regularization: 
-            - batch_norm: True
-
-        - out: [64, 10]
+        - out: [256, 10]
           activation: softmax 
 
 constants:

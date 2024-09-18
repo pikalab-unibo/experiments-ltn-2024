@@ -70,7 +70,7 @@ class NNFactory:
         
         model = nn.Sequential(*network_layers)
         return LogicTensorNetwork(arguments, model)
-    
+        
     def _get_activation(self, activation):
         activations = {
             'relu': nn.ReLU(),

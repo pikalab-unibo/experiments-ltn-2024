@@ -2,9 +2,10 @@ from itertools import cycle
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import torch
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 class DynamicDataset(Dataset):
-    def __init__(self, config, features, device=None):
+    def __init__(self, config, features, device=None, scalers=None, scaler_type = None):
         self.config = config
         self.features = features
         self.device = device  # Store the device
@@ -16,7 +17,27 @@ class DynamicDataset(Dataset):
 
         if any(self.data.index.name in self.instance_features[instance] for instance in self.config["instances"]):
             self.data = pd.read_csv(config["path"])
-            
+
+        if scaler_type is None:
+            self.scalers = None
+         
+        else:
+
+            scaler = StandardScaler if scaler_type == "standard" else MinMaxScaler
+        
+            if scalers is None:
+                self.scalers = {}
+                for instance in self.config["instances"]:
+                    self.scalers[instance] = {}
+                    for feature in self.instance_features[instance]:
+                        self.scalers[instance][feature] = scaler()
+                        self.data[feature] = self.scalers[instance][feature].fit_transform(self.data[feature].values.reshape(-1, 1))
+            else:
+                self.scalers = scalers
+                for instance in self.config["instances"]:
+                    for feature in self.instance_features[instance]:
+                        self.data[feature] = self.scalers[instance][feature].fit_transform(self.data[feature].values.reshape(-1, 1))
+
     def __len__(self):
         return len(self.data)
     
@@ -38,11 +59,11 @@ class DynamicDataset(Dataset):
         
         return tuple(batch)
 class LoaderWrapper:
-    def __init__(self, config, features, device=None):
+    def __init__(self, config, features, device=None, scalers = None, scaler_type = None):
         self.variables = config["instances"]
         self.targets = config["targets"]
-        # Pass the device to the DynamicDataset
-        self.loader = DataLoader(DynamicDataset(config, features, device=device), batch_size=config["batch_size"], shuffle=True)
+        self.loader = DataLoader(DynamicDataset(config, features, device=device, scalers=scalers, scaler_type = scaler_type), batch_size=config["batch_size"], shuffle=True)
+        self.scalers = self.loader.dataset.scalers
 
     def __iter__(self):
         self.iter_loader = iter(self.loader)

@@ -1,0 +1,83 @@
+instances:
+  - person
+  - y
+
+features:
+  person:
+    - Clump_thickness
+    - Uniformity_of_cell_size
+    - Uniformity_of_cell_shape
+    - Marginal_adhesion
+    - Single_epithelial_cell_size
+    - Bare_nuclei
+    - Bland_chromatin
+    - Normal_nucleoli
+    - Mitoses
+  y:
+    - Label
+
+train:
+  medical:
+    instances: [person]
+    targets: [y]
+    path: datasets/train.csv
+    batch_size: 32
+    scaler: standard
+    
+validation:
+  medical:
+    instances: [person]
+    targets: [y]
+    path: datasets/val.csv
+    batch_size: 32
+
+test:
+  medical:
+    instances: [person]
+    targets: [y]
+    path: datasets/test.csv
+    batch_size: 128
+
+constants:
+  - malignant : 1
+  - benign : 0
+
+predicates:
+  Cancer:
+    args: [person]
+    structure:
+      type: feed-forward
+      layers:
+
+        - in: [person, 512] 
+          activation: elu
+          regularization: 
+            - dropout: 0.41886658454737025
+
+
+        - hidden: [512, 256]
+          activation: elu
+          regularization: 
+            - dropout: 0.41886658454737025
+
+        - hidden: [256, 128]
+          activation: elu
+          regularization: 
+            - dropout: 0.41886658454737025
+
+        - out: [128, 1]
+          activation: sigmoid
+
+constraints:
+  - rule: "all person. (y == malignant -> Cancer(person))"
+  - rule: "all person. (y == benign -> not Cancer(person))"
+
+  - rule: "all person. ( (person[Bare_nuclei] > 55) -> Cancer(person))"
+  - rule: "all person. ( (person[Clump_thickness] > 65) -> Cancer(person))"
+  - rule: "all person. ( ((person[Bare_nuclei] < 55) and (person[Clump_thickness] < 65)) -> not Cancer(person))"
+
+  - rule: "all person. ( (person[Bare_nuclei] < 16) -> not Cancer(person))"
+  - rule: "all person. ( ((person[Bare_nuclei] > 15) and (person[Clump_thickness] > 46)) -> Cancer(person))"
+  - rule: "all person. ( ((person[Bare_nuclei] > 65) and (person[Clump_thickness] < 46)) -> Cancer(person))"
+  - rule: "all person. ( ((person[Bare_nuclei] > 15) and (person[Bare_nuclei] < 66) and (person[Clump_thickness] < 46)) -> not Cancer(person))"
+

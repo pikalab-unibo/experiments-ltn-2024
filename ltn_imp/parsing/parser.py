@@ -1,7 +1,6 @@
 from ltn_imp.fuzzy_operators.connectives import AndConnective, OrConnective, NotConnective, ImpliesConnective, IffConnective, EqConnective, AddConnective, SubtractConnective, MultiplyConnective, DivideConnective, LessThanConnective, MoreThanConnective, LessThanOrEqualConnective, MoreThanOrEqualConnective, NegativeConnective
 from ltn_imp.fuzzy_operators.predicates import Predicate
 from ltn_imp.fuzzy_operators.quantifiers import ForallQuantifier, ExistsQuantifier
-from ltn_imp.fuzzy_operators.connectives import SqrtEqConnective, LessThanConnective, MoreThanConnective, LessThanOrEqualConnective, MoreThanOrEqualConnective
 from ltn_imp.visitor import Visitor, make_visitable
 import ltn_imp.fuzzy_operators.connectives as Connectives
 
@@ -63,8 +62,6 @@ class ConvertedExpression:
 
     def __call__(self, *args, **kwargs):
         try:
-            args = [arg.to(self.device) if isinstance(arg, torch.Tensor) else arg for arg in args]
-            kwargs = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in kwargs.items()}
             result = self.converted(*args, **kwargs)
             if isinstance(result, torch.Tensor):
                 result = result.to(self.device)
@@ -93,7 +90,7 @@ class ConvertedExpression:
         return dot
     
 class ExpressionVisitor(Visitor):
-    def __init__(self, yaml, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None, device=torch.device("cpu")):
+    def __init__(self, yaml, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None, device=torch.device("cpu"), scalers = None):
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
@@ -103,6 +100,7 @@ class ExpressionVisitor(Visitor):
         self.declarations = declarations if declarations is not None else {}
         self.declarers = declarers if declarers is not None else {}
         self.device = device
+        self.scalers = scalers
 
         self.yaml = yaml
 
@@ -111,25 +109,25 @@ class ExpressionVisitor(Visitor):
         Not = get_subclass_with_prefix(module=Connectives, superclass=NotConnective, prefix=connective_impls.get('not', 'default'))
         Implies = get_subclass_with_prefix(module=Connectives, superclass=ImpliesConnective, prefix=connective_impls.get('implies', 'default'))
         Equiv = get_subclass_with_prefix(module=Connectives, superclass=IffConnective, prefix=connective_impls.get('iff', 'default'))
-   
+
+        Eq_Regression = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_reg', 'sqrt'))
+        Eq_Classification = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_class', 'tan'))        
+
         Exists = ExistsQuantifier(method=quantifier_impls.get('exists', 'pmean'))
         Forall = ForallQuantifier(method=quantifier_impls.get('forall', 'pmean_error'))
 
         Add = get_subclass_with_prefix(module=Connectives, superclass=AddConnective, prefix=functions.get('add', 'default'))
         Subtract = get_subclass_with_prefix(module=Connectives, superclass=SubtractConnective, prefix=functions.get('sub', 'default'))
         Multiply = get_subclass_with_prefix(module=Connectives, superclass=MultiplyConnective, prefix=functions.get('mul', 'default'))
-        Divide = get_subclass_with_prefix(module=Connectives, superclass=DivideConnective, prefix=functions.get('div', 'default'))    
+        Divide = get_subclass_with_prefix(module=Connectives, superclass=DivideConnective, prefix=functions.get('div', 'default'))
+
+        LessThan = get_subclass_with_prefix(module=Connectives, superclass=LessThanConnective, prefix=predicates.get('lt', 'default'))
+        MoreThan = get_subclass_with_prefix(module=Connectives, superclass=MoreThanConnective, prefix=predicates.get('gt', 'default'))
+        LessThanEqual = get_subclass_with_prefix(module=Connectives, superclass=LessThanOrEqualConnective, prefix=predicates.get('le', 'default'))
+        MoreThanEqual = get_subclass_with_prefix(module=Connectives, superclass=MoreThanOrEqualConnective, prefix=predicates.get('ge', 'default'))
+
         Negative = get_subclass_with_prefix(module=Connectives, superclass=NegativeConnective, prefix=connective_impls.get('neg', 'default'))
-        Eq_Classification = get_subclass_with_prefix(module=Connectives, superclass=EqConnective, prefix=connective_impls.get('eq_class', 'tan')) 
-
-        self.learnable_connectives = {  EqualityExpression :SqrtEqConnective,
-                                        LessThanExpression : LessThanConnective,
-                                        MoreThanExpression : MoreThanConnective,
-                                        LessEqualExpression : LessThanOrEqualConnective, 
-                                        MoreEqualExpression : MoreThanOrEqualConnective}
         
-        self.comparision_operators = []
-
         self.connective_map = {
             AndExpression: And,
             OrExpression: Or,
@@ -137,11 +135,16 @@ class ExpressionVisitor(Visitor):
             IffExpression: Equiv,
             NegatedExpression: Not,
             NegativeExpression: Negative,
+            EqualityExpression: Eq_Regression,
             DirectEqualityExpression : Eq_Classification, 
             AdditionExpression: Add,
             SubtractionExpression: Subtract,
             MultiplicationExpression: Multiply,
             DivisionExpression: Divide,
+            LessThanExpression: LessThan,
+            MoreThanExpression: MoreThan,
+            LessEqualExpression: LessThanEqual, # Still Problematic
+            MoreEqualExpression: MoreThanEqual  # Still Problematic
         }
 
         self.quantifier_map = {
@@ -229,12 +232,7 @@ class ExpressionVisitor(Visitor):
         return connective(left_value, right_value)
         
     def visit_BinaryExpression(self, expression):
-        if type(expression) in self.learnable_connectives:
-            connective = self.learnable_connectives.get(type(expression))()
-            self.comparision_operators.append(connective)
-        else:
-            connective = self.connective_map.get(type(expression))
-
+        connective = self.connective_map.get(type(expression))
         if connective:
             left = self.visit(expression.left)
             right = self.visit(expression.right)
@@ -280,18 +278,46 @@ class ExpressionVisitor(Visitor):
                 
     def visit_ConstantExpression(self, expression):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_constant(variable_mapping, expression), self)
+
+    def reverse_scaling(self, scaler, tensor_data):    
+
+        if hasattr(scaler, 'mean_') and hasattr(scaler, 'scale_'):
+            # For StandardScaler
+            scaler_mean = torch.tensor(scaler.mean_, dtype=torch.float32).to(tensor_data.device)
+            scaler_scale = torch.tensor(scaler.scale_, dtype=torch.float32).to(tensor_data.device)            
+            scaler_mean = scaler_mean[0]  # Extract mean for the feature column
+            scaler_scale = scaler_scale[0]  # Extract scale for the feature column
+            tensor_data_reversed = tensor_data * scaler_scale + scaler_mean
+        
+        elif hasattr(scaler, 'data_min_') and hasattr(scaler, 'data_max_'):
+            # For MinMaxScaler
+            scaler_min = torch.tensor(scaler.data_min_, dtype=torch.float32).to(tensor_data.device)
+            scaler_max = torch.tensor(scaler.data_max_, dtype=torch.float32).to(tensor_data.device)            
+            scaler_min = scaler_min[0]
+            scaler_max = scaler_max[0]
+            tensor_data_reversed = tensor_data * (scaler_max - scaler_min) + scaler_min
+            
+        else:
+            raise ValueError("Unsupported scaler type. Only StandardScaler and MinMaxScaler are supported.")
     
+        return tensor_data_reversed
+
+
     def handle_indexing(self, variable_mapping, expression):
         feature = expression.feature
         variable = expression.variable
+        if self.scalers:
+            scaler = self.scalers[str(variable)][str(feature)] if str(variable) in self.yaml["instances"] else None
+        else:
+            scaler = None
 
         if str(variable) in variable_mapping:
             index = self.yaml["features"][str(variable)].index(feature)
-            return self.visit(variable)(variable_mapping)[:, index]
+            return self.reverse_scaling( scaler, self.visit(variable)(variable_mapping)[:, index] )  if scaler else self.visit(variable)(variable_mapping)[:, index]
         else:
             if str(feature).isdigit():
                 feature = int(feature)
-                return self.visit(variable)(variable_mapping)[:, feature]
+                return self.reverse_scaling( scaler, self.visit(variable)(variable_mapping)[:, feature] ) if scaler else self.visit(variable)(variable_mapping)[:, feature]
             else:
                 raise KeyError(f"Variable {variable} not recognized")
 
@@ -299,7 +325,7 @@ class ExpressionVisitor(Visitor):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_indexing(variable_mapping, expression), self)
 
 class LTNConverter:
-    def __init__(self,yaml = None, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}, device=torch.device("cpu")):
+    def __init__(self,yaml = None, scalers = {}, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}, device=torch.device("cpu")):
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
@@ -311,6 +337,7 @@ class LTNConverter:
         self.parser = LTNParser(parser_path)
         self.yaml = yaml
         self.device = device
+        self.scalers = scalers
 
         self.visitor = ExpressionVisitor(
             self.yaml,
@@ -320,7 +347,8 @@ class LTNConverter:
             quantifier_impls=self.quantifier_impls, 
             declarations=self.declarations, 
             declarers=self.declarers,
-            device=self.device
+            device=self.device,
+            scalers = self.scalers,
         )
         
     def parse(self, expression):

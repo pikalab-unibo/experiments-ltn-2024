@@ -10,7 +10,7 @@ import yaml
 sat_agg_op = SatAgg()
 
 class KnowledgeBase:
-    def __init__(self, yaml_file, device = "cpu"):
+    def __init__(self, yaml_file, device = "cpu", scaler = None):
 
         if device == "cuda" and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -25,10 +25,12 @@ class KnowledgeBase:
             config = yaml.safe_load(file)
         self.config = config
         self.factory = NNFactory()
+        self.scalers = {}
 
         self.set_loaders()
         self.set_val_loaders()
         self.set_test_loaders()
+
         self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
         self.set_converter()
@@ -38,7 +40,7 @@ class KnowledgeBase:
         self.set_rule_to_data_loader_mapping()
 
     def set_converter(self):
-        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device) 
+        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device, scalers=self.scalers) 
 
     def set_constant_mapping(self):
         constants = self.config.get("constants", [])
@@ -82,7 +84,7 @@ class KnowledgeBase:
                 layer_size = layer[layer_type]
                 activation = layer.get('activation', None)
                 regularization = layer.get('regularization', [])
-                
+            
                 in_size, out_size = self.evaluate_layer_size(layer_size, features, args)
                 layers.append((in_size, out_size))
                 activations.append(activation)
@@ -122,8 +124,20 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["train"]:
             dataset = self.config["train"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device)
-            self.loaders.append(loader)
+            scaler_type = self.config["train"].get("scaler", None)
+
+            if scaler_type:
+                loader = LoaderWrapper(dataset, features, device=self.device, scaler_type=scaler_type)
+                self.loaders.append(loader)
+                self.scalers.update(loader.scalers)
+                
+            else:
+                loader = LoaderWrapper(dataset, features, device=self.device)
+                self.loaders.append(loader)
+
+        if len(self.scalers.keys()) == 0:
+            self.scalers = None
+
 
     def set_val_loaders(self):
         if "validation" not in self.config:
@@ -133,7 +147,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["validation"]:
             dataset = self.config["validation"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device)
+            loader = LoaderWrapper(dataset, features, device=self.device, scalers=self.scalers)
             self.val_loaders.append(loader)
 
     def set_test_loaders(self):
@@ -144,7 +158,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["test"]:
             dataset = self.config["test"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device)
+            loader = LoaderWrapper(dataset, features, device=self.device, scalers=self.scalers)
             self.test_loaders.append(loader)
         
     def set_rule_to_data_loader_mapping(self):
@@ -167,11 +181,14 @@ class KnowledgeBase:
         for weight, rule_output in zip(self.rule_weights, rule_outputs):
             for _ in range(weight):
                 input.append(rule_output)
-                             
+                                
         sat_agg_value = sat_agg_op(
             *input,
         )
         loss = 1.0 - sat_agg_value
+
+        assert torch.isfinite(loss).all(), f"Loss contains invalid values: {loss}"
+
         return loss
         
     def parameters(self):
@@ -179,10 +196,6 @@ class KnowledgeBase:
         for model in self.predicates.values():
             if hasattr(model, 'parameters'):
                 params += list(model.parameters())
-
-        for param in self.converter.visitor.comparision_operators:
-            params.append(param.k)
-
         return params
     
     def partition_data(self, var_mapping, batch, loader):

@@ -47,18 +47,15 @@ predicates:
       layers:
         - in: [animal, 512] 
           activation: leaky_relu
-          regularization:
-          -  dropout: 0.46411367504928136
+
 
         - hidden: [512, 256] 
           activation: leaky_relu
-          regularization:
-          -  dropout: 0.46411367504928136
+
 
         - hidden: [256, 128]  
           activation: leaky_relu
-          regularization:
-          -  dropout: 0.46411367504928136
+
 
         - out: [128, 7] 
           activation: softmax
@@ -121,11 +118,3 @@ constraints:
   - rule: all animal. ((label == insect) -> output[5])
   - rule: all animal. ((label == invertebrate) -> output[6])
 
-  # Logic Rules
-  - rule: all animal. (Mammal(animal) -> output[0])
-  - rule: all animal. (Bird(animal) -> output[1])
-  - rule: all animal. (Reptile(animal) -> output[2])
-  - rule: all animal. (Fish(animal) -> output[3])
-  - rule: all animal. (Amphibian(animal) -> output[4])
-  - rule: all animal. (Insect(animal) -> output[5])
-  - rule: all animal. (Invertebrate(animal) -> output[6])
