@@ -1,0 +1,11 @@
+.venv/
+.git/
+.github/
+.vscode/
+__pycache__/
+tests/
+*.pyc
+bump_version.py
+renovate.json
+CHANGELOG.md
+.git*

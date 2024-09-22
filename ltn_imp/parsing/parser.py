@@ -90,7 +90,7 @@ class ConvertedExpression:
         return dot
     
 class ExpressionVisitor(Visitor):
-    def __init__(self, yaml, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None, device=torch.device("cpu")):
+    def __init__(self, yaml, predicates, functions, connective_impls=None, quantifier_impls=None, declarations=None, declarers=None, device=torch.device("cpu"), scalers = None):
         connective_impls = connective_impls or {}
         quantifier_impls = quantifier_impls or {}
 
@@ -100,6 +100,7 @@ class ExpressionVisitor(Visitor):
         self.declarations = declarations if declarations is not None else {}
         self.declarers = declarers if declarers is not None else {}
         self.device = device
+        self.scalers = scalers
 
         self.yaml = yaml
 
@@ -195,18 +196,17 @@ class ExpressionVisitor(Visitor):
                 self.declarations[str(var)] = value
                 self.declarers[str(var)] = str(expression)
                 
-            self.intermediate_results[functor].append(torch.tensor([1.0], requires_grad=True))
-            return torch.tensor([1.0], requires_grad=True)
+            self.intermediate_results[functor].append(torch.tensor([1.0], requires_grad=True, device=self.device))
+            return torch.tensor([1.0], requires_grad=True, device=self.device)
 
         # Ensuring results is a tensor
         if isinstance(results, (list, tuple)):
-            results_tensor = torch.stack([res if isinstance(res, torch.Tensor) else torch.tensor(res) for res in results])
+            results_tensor = torch.stack([res if isinstance(res, torch.Tensor) else torch.tensor(res, device=self.device) for res in results])
         else:
             results_tensor = results
 
         self.intermediate_results[functor].append(results_tensor)
         return results_tensor
-
 
     def visit_ApplicationExpression(self, expression):
         variables = [arg for arg in expression.args]
@@ -222,7 +222,7 @@ class ExpressionVisitor(Visitor):
         else:
             raise ValueError(f"Unknown functor: {functor}")
 
-    def delay_execution(self, left, right, var_mapping, connective, expression):
+    def delay_execution(self, left, right, var_mapping, connective):
         try: # Right side might be declaring a variable in the left 
             left_value = left(var_mapping)
             right_value = right(var_mapping)
@@ -236,7 +236,7 @@ class ExpressionVisitor(Visitor):
         if connective:
             left = self.visit(expression.left)
             right = self.visit(expression.right)
-            return ConvertedExpression(expression, lambda var_mapping: self.delay_execution(left, right, var_mapping, connective, expression), self)
+            return ConvertedExpression(expression, lambda var_mapping: self.delay_execution(left, right, var_mapping, connective), self)
         else:
             raise NotImplementedError(f"Unsupported binary expression type: {type(expression)}")
 
@@ -274,22 +274,50 @@ class ExpressionVisitor(Visitor):
         if str(expression) in variable_mapping:
             return variable_mapping[str(expression)]
         else:
-            return torch.tensor(float(str(expression)),requires_grad=True)
+            return torch.tensor(float(str(expression)),requires_grad=True, device=self.device)
                 
     def visit_ConstantExpression(self, expression):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_constant(variable_mapping, expression), self)
+
+    def reverse_scaling(self, scaler, tensor_data):    
+
+        if hasattr(scaler, 'mean_') and hasattr(scaler, 'scale_'):
+            # For StandardScaler
+            scaler_mean = torch.tensor(scaler.mean_, dtype=torch.float32).to(tensor_data.device)
+            scaler_scale = torch.tensor(scaler.scale_, dtype=torch.float32).to(tensor_data.device)            
+            scaler_mean = scaler_mean[0]  # Extract mean for the feature column
+            scaler_scale = scaler_scale[0]  # Extract scale for the feature column
+            tensor_data_reversed = tensor_data * scaler_scale + scaler_mean
+        
+        elif hasattr(scaler, 'data_min_') and hasattr(scaler, 'data_max_'):
+            # For MinMaxScaler
+            scaler_min = torch.tensor(scaler.data_min_, dtype=torch.float32).to(tensor_data.device)
+            scaler_max = torch.tensor(scaler.data_max_, dtype=torch.float32).to(tensor_data.device)            
+            scaler_min = scaler_min[0]
+            scaler_max = scaler_max[0]
+            tensor_data_reversed = tensor_data * (scaler_max - scaler_min) + scaler_min
+            
+        else:
+            raise ValueError("Unsupported scaler type. Only StandardScaler and MinMaxScaler are supported.")
     
+        return tensor_data_reversed
+
+
     def handle_indexing(self, variable_mapping, expression):
         feature = expression.feature
         variable = expression.variable
+        if self.scalers:
+            scaler = self.scalers[str(variable)][str(feature)] if str(variable) in self.yaml["instances"] else None
+        else:
+            scaler = None
 
         if str(variable) in variable_mapping:
             index = self.yaml["features"][str(variable)].index(feature)
-            return self.visit(variable)(variable_mapping)[:, index]
+            return self.reverse_scaling( scaler, self.visit(variable)(variable_mapping)[:, index] )  if scaler else self.visit(variable)(variable_mapping)[:, index]
         else:
             if str(feature).isdigit():
                 feature = int(feature)
-                return self.visit(variable)(variable_mapping)[:, feature]
+                return self.reverse_scaling( scaler, self.visit(variable)(variable_mapping)[:, feature] ) if scaler else self.visit(variable)(variable_mapping)[:, feature]
             else:
                 raise KeyError(f"Variable {variable} not recognized")
 
@@ -297,7 +325,7 @@ class ExpressionVisitor(Visitor):
         return ConvertedExpression(expression, lambda variable_mapping: self.handle_indexing(variable_mapping, expression), self)
 
 class LTNConverter:
-    def __init__(self,yaml = None, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}, device=torch.device("cpu")):
+    def __init__(self,yaml = None, scalers = {}, predicates={}, functions={}, connective_impls=None, quantifier_impls=None, declarations={}, declarers={}, device=torch.device("cpu")):
         self.predicates = predicates
         self.functions = functions
         self.connective_impls = connective_impls
@@ -309,17 +337,9 @@ class LTNConverter:
         self.parser = LTNParser(parser_path)
         self.yaml = yaml
         self.device = device
+        self.scalers = scalers
 
-    def parse(self, expression):
-        expression = self.parser.parse(expression)
-        self.expression = expression
-        return expression
-        
-    def __call__(self, expression):
-        expression = self.parser.parse(expression)
-    
-        self.expression = expression
-        visitor = ExpressionVisitor(
+        self.visitor = ExpressionVisitor(
             self.yaml,
             self.predicates, 
             self.functions, 
@@ -327,7 +347,16 @@ class LTNConverter:
             quantifier_impls=self.quantifier_impls, 
             declarations=self.declarations, 
             declarers=self.declarers,
-            device=self.device
+            device=self.device,
+            scalers = self.scalers,
         )
-
-        return ConvertedExpression(self.expression, expression.accept(visitor), visitor, device=self.device)
+        
+    def parse(self, expression):
+        expression = self.parser.parse(expression)
+        self.expression = expression
+        return expression
+        
+    def __call__(self, expression):
+        expression = self.parser.parse(expression)
+        self.expression = expression
+        return ConvertedExpression(self.expression, expression.accept(self.visitor), self.visitor, device=self.device)

@@ -1,6 +1,7 @@
 import torch 
 from ltn_imp.fuzzy_operators.aggregators import SatAgg
 from ltn_imp.automation.data_loaders import CombinedDataLoader, LoaderWrapper
+from ltn_imp.parsing.expressions import LessThanExpression, MoreThanExpression, EqualityExpression
 from ltn_imp.parsing.parser import LTNConverter
 from ltn_imp.parsing.ancillary_modules import ModuleFactory
 from ltn_imp.automation.network_factory import NNFactory
@@ -24,10 +25,12 @@ class KnowledgeBase:
             config = yaml.safe_load(file)
         self.config = config
         self.factory = NNFactory()
+        self.scalers = {}
 
         self.set_loaders()
         self.set_val_loaders()
         self.set_test_loaders()
+
         self.constant_mapping = self.set_constant_mapping()
         self.set_predicates()
         self.set_converter()
@@ -37,7 +40,7 @@ class KnowledgeBase:
         self.set_rule_to_data_loader_mapping()
 
     def set_converter(self):
-        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device) 
+        self.converter = LTNConverter(yaml=self.config, predicates=self.predicates, device=self.device, scalers=self.scalers) 
 
     def set_constant_mapping(self):
         constants = self.config.get("constants", [])
@@ -121,8 +124,10 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["train"]:
             dataset = self.config["train"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device)
+            type = dataset["scaler"] if "scaler" in dataset else None
+            loader = LoaderWrapper(dataset, features, device=self.device, type = type)
             self.loaders.append(loader)
+            self.scalers.update(loader.scalers)
 
     def set_val_loaders(self):
         if "validation" not in self.config:
@@ -132,7 +137,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["validation"]:
             dataset = self.config["validation"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device)
+            loader = LoaderWrapper(dataset, features, device=self.device, scalers=self.scalers)
             self.val_loaders.append(loader)
 
     def set_test_loaders(self):
@@ -143,7 +148,7 @@ class KnowledgeBase:
         features = self.config["features"]
         for dataset in self.config["test"]:
             dataset = self.config["test"][dataset]
-            loader = LoaderWrapper(dataset, features, device=self.device)
+            loader = LoaderWrapper(dataset, features, device=self.device, scalers=self.scalers)
             self.test_loaders.append(loader)
         
     def set_rule_to_data_loader_mapping(self):
@@ -166,19 +171,21 @@ class KnowledgeBase:
         for weight, rule_output in zip(self.rule_weights, rule_outputs):
             for _ in range(weight):
                 input.append(rule_output)
-                             
+                                
         sat_agg_value = sat_agg_op(
             *input,
         )
         loss = 1.0 - sat_agg_value
+
+        assert torch.isfinite(loss).all(), f"Loss contains invalid values: {loss}"
+
         return loss
-    
+        
     def parameters(self):
         params = []
         for model in self.predicates.values():
             if hasattr(model, 'parameters'):
                 params += list(model.parameters())
-        
         return params
     
     def partition_data(self, var_mapping, batch, loader):
@@ -209,12 +216,30 @@ class KnowledgeBase:
                 rule_outputs.append(torch.mean(torch.stack(rule_output)))
             validation_loss = self.loss(rule_outputs)
         return validation_loss
+    
+    def compute_test_loss(self):
+        with torch.no_grad():
+            rule_outputs = []
+            for rule in self.rules:
+                rule_output = []
+                var_mapping = {}
+                if self.test_loaders:
+                    for loader in self.test_loaders:
+                        for batch in loader:
+                            self.partition_data(var_mapping, batch, loader)
+                            rule_output.append(rule(var_mapping))
+                else:
+                    rule_output.append(rule(var_mapping))
+                rule_outputs.append(torch.mean(torch.stack(rule_output)))
+            test_loss = self.loss(rule_outputs)
+        return test_loss
 
     def optimize(self, num_epochs=10, log_steps=10, lr=0.001, early_stopping=False, patience=5, min_delta=0.0, weight_decay=0.0, verbose = True):
     
         try:
             self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
-        except:
+        except Exception as e:
+            print(e)
             print("No parameters to optimize")
             return
 
@@ -250,12 +275,13 @@ class KnowledgeBase:
 
             if epoch % log_steps == 0 and verbose:
                 validation_loss = self.compute_validation_loss() if self.val_loaders else None
-                print([str(rule) for rule in self.rules])
+
+                for rule, outcome in zip(self.rules, rule_outputs):
+                    print(f"Rule: {rule}, Outcome: {outcome}")
+                
                 if validation_loss is not None:
-                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                 else:
-                    print("Rule Outputs: ", rule_outputs)
                     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}")
                 print()
 
@@ -269,6 +295,7 @@ class KnowledgeBase:
                     epochs_no_improve += 1
 
                 if epochs_no_improve >= patience:
-                    print("Rule Outputs: ", rule_outputs)
+                    for rule, outcome in zip(self.rules, rule_outputs):
+                        print(f"Rule: {rule}, Outcome: {outcome}")
                     print(f"Early stopping at Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item()}, Validation Loss: {validation_loss.item()}")
                     break

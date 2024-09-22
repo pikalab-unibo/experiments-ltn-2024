@@ -23,7 +23,7 @@ train:
     path: datasets/train.csv
     batch_size: 32
     scaler: standard
-    
+
 validation:
   medical:
     instances: [person]
@@ -48,22 +48,14 @@ predicates:
     structure:
       type: feed-forward
       layers:
-
         - in: [person, 512] 
-          activation: elu
-          regularization: 
-            - dropout: 0.41886658454737025
-
+          activation: leaky_relu
 
         - hidden: [512, 256]
-          activation: elu
-          regularization: 
-            - dropout: 0.41886658454737025
+          activation: leaky_elu
 
         - hidden: [256, 128]
-          activation: elu
-          regularization: 
-            - dropout: 0.41886658454737025
+          activation: leaky_elu
 
         - out: [128, 1]
           activation: sigmoid
@@ -73,11 +65,15 @@ constraints:
   - rule: "all person. (y == benign -> not Cancer(person))"
 
   - rule: "all person. ( (person[Bare_nuclei] > 55) -> Cancer(person))"
+
   - rule: "all person. ( (person[Clump_thickness] > 65) -> Cancer(person))"
+
   - rule: "all person. ( ((person[Bare_nuclei] < 55) and (person[Clump_thickness] < 65)) -> not Cancer(person))"
 
   - rule: "all person. ( (person[Bare_nuclei] < 16) -> not Cancer(person))"
-  - rule: "all person. ( ((person[Bare_nuclei] > 15) and (person[Clump_thickness] > 46)) -> Cancer(person))"
-  - rule: "all person. ( ((person[Bare_nuclei] > 65) and (person[Clump_thickness] < 46)) -> Cancer(person))"
-  - rule: "all person. ( ((person[Bare_nuclei] > 15) and (person[Bare_nuclei] < 66) and (person[Clump_thickness] < 46)) -> not Cancer(person))"
 
+  - rule: "all person. ( ((person[Bare_nuclei] > 15) and (person[Clump_thickness] > 46)) -> Cancer(person))"
+
+  - rule: "all person. ( ((person[Bare_nuclei] > 65) and (person[Clump_thickness] < 46)) -> Cancer(person))"
+
+  - rule: "all person. ( ((person[Bare_nuclei] > 15) and (person[Bare_nuclei] < 66) and (person[Clump_thickness] < 46)) -> not Cancer(person))"
