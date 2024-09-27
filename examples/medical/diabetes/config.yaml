@@ -21,7 +21,6 @@ train:
     targets: [y]
     path: datasets/train.csv
     batch_size: 32
-    scaler: standard
 
 validation:
   medical:
@@ -64,6 +63,7 @@ predicates:
 
         - out: [64, 1]
           activation: sigmoid
+
 
           
 constraints:
