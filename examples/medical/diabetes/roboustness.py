@@ -87,25 +87,6 @@ def compute_kl_divergence(original_data: pd.DataFrame, perturbed_data: pd.DataFr
     # Return average KL divergence across all features
     return kl_divergence / n_features
 
-def calculate_absolute_and_relative_robustness(original_accuracy: float, perturbed_accuracy: float, 
-                                               uneducated_accuracy: float) -> (float, float):
-    """
-    Calculate absolute and relative robustness of a model.
-    
-    :param original_accuracy: Accuracy of the model on the original dataset
-    :param perturbed_accuracy: Accuracy of the model on the perturbed dataset
-    :param uneducated_accuracy: Accuracy of a baseline or 'uneducated' model
-    :return: Absolute robustness and relative robustness
-    """
-    # Absolute robustness compares original and perturbed accuracies
-    absolute_robustness = perturbed_accuracy / original_accuracy if original_accuracy != 0 else 0
-    
-    # Relative robustness compares the absolute robustness to the uneducated model's performance
-    relative_robustness = absolute_robustness / uneducated_accuracy if uneducated_accuracy != 0 else 0
-    
-    return absolute_robustness, relative_robustness
-
-
 def apply_combined_perturbations(data: pd.DataFrame, label_column: str, mu: float = 0, sigma: float = 0.1,
                                  flip_prob: float = 0.1, seed: int = 42) -> pd.DataFrame:
     """
