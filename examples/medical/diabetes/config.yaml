@@ -35,6 +35,12 @@ test:
     targets: [y]
     path: datasets/test.csv
     batch_size: 128
+  
+  pertubrated:
+    instances: [person]
+    targets: [y]
+    path: datasets/pertubrated.csv
+    batch_size: 128
 
 constants:
   - diabetes : 1
