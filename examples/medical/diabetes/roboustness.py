@@ -80,23 +80,18 @@ def flip_labels_general(data: pd.DataFrame, label_column: str, flip_prob: float 
     
     return flipped_data
 
-def apply_data_dropping(data: pd.DataFrame, drop_prob: float = 0.1, seed: int = 42) -> pd.DataFrame:
-    """
-    Randomly drop rows from the dataset with a specified probability.
-    
-    :param data: Original dataset (DataFrame)
-    :param drop_prob: Probability of dropping each row (default 0.1)
-    :param seed: Random seed for reproducibility
-    :return: DataFrame with dropped rows
-    """
+def apply_data_dropping(data: pd.DataFrame, label_column: str, drop_prob: float = 0.1, seed: int = 42) -> pd.DataFrame:
     np.random.seed(seed)
-    
-    # Create a mask to decide which rows to keep
-    row_mask = np.random.rand(len(data)) >= drop_prob
-    
-    # Apply the mask to drop rows
-    dropped_data = data[row_mask].reset_index(drop=True)
-    
+    # Separate the data into positive and negative examples
+    positive_data = data[data[label_column] == 1]
+    negative_data = data[data[label_column] == 0]
+
+    # Apply dropping to each class separately
+    positive_mask = np.random.rand(len(positive_data)) >= drop_prob
+    negative_mask = np.random.rand(len(negative_data)) >= drop_prob
+
+    # Combine the remaining rows
+    dropped_data = pd.concat([positive_data[positive_mask], negative_data[negative_mask]]).reset_index(drop=True)
     return dropped_data
 
 def compute_kl_divergence(original_data: pd.DataFrame, perturbed_data: pd.DataFrame, feature_columns: list) -> float:

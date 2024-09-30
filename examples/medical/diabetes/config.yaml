@@ -27,14 +27,14 @@ validation:
     instances: [person]
     targets: [y]
     path: datasets/val.csv
-    batch_size: 128
+    batch_size: 32
 
 test:
   medical:
     instances: [person]
     targets: [y]
     path: datasets/test.csv
-    batch_size: 128
+    batch_size: 32
   
 constants:
   - diabetes : 1
