@@ -1,26 +1,19 @@
-# LTN_Imp
+# LTN_Imp (Logic tensor network implementation)
 
 
-## Project structure
-Overview:
+[@emrekuruu](https://github.com/emrekuruu)'s work at UniBo's during his intership in 2024. 
+It contains an implementation of LTN, and various experiments. 
 
-```bash
-<root directory>
-├── ltn_imp/             # main package (should be named after your project)
-│   ├── __init__.py         # python package marker
-│   └── __main__.py         # application entry point
-│   └── fuzzy_operators     # folder for all of the fuzzy operators
-│   └── parsing             # folder for the parser utilizing NLTK Logic and all the needed files
-│   
-├── test/                   # test package contains unit tests
-│   ├── parsing_tests       # folder for unit tests for parser
-│   └── learning_tests      # folder for unit tests for fuzzy operators in optimization
-│   
-├── .github/                # configuration of GitHub CI
-│   └── workflows/          # configuration of GitHub Workflows
-│       └──  check.yml       # runs tests on multiple OS and versions of Python
-│
-├── LICENSE                 # license file (Apache 2.0 by default)
-├── pyproject.toml          # declares build dependencies
-└── poetry.toml             # Poetry settings
-```
+
+## TELMED 2025 Paper
+
+Title: `Neuro-symbolic AI for Supporting Chronic Disease Diagnosis and Monitoring`
+
+Authors:
+- [Matteo Magnini](mailto:matteo.magnini@unibo.it)
+- [Giovanni Ciatto](mailto:giovanni.ciatto@unibo.it)
+- [Ahmet Emre Kuru](mailto:emre.kuru@ozu.edu.tr)
+- [Christel Sirocchi](mailto:c.sirocchi2@campus.uniurb.it)
+- [Sara Montagna](mailto:sara.montagna@uniurb.it)
+
+Experiments folder: [`examples/medical/diabetes/demo.ipynb`](./examples/medical/diabetes/demo.ipynb)
